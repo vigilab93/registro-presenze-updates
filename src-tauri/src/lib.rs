@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::sync::Mutex;
 use tauri::Manager;
 use tauri_plugin_updater::{Update, UpdaterExt};
@@ -315,6 +316,27 @@ fn print_report(window: tauri::WebviewWindow) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn open_update_page() -> Result<(), String> {
+    const RELEASES_URL: &str =
+        "https://github.com/vigilab93/registro-presenze-updates/releases/latest";
+
+    #[cfg(target_os = "macos")]
+    let result = Command::new("open").arg(RELEASES_URL).spawn();
+
+    #[cfg(target_os = "windows")]
+    let result = Command::new("cmd")
+        .args(["/C", "start", "", RELEASES_URL])
+        .spawn();
+
+    #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
+    let result = Command::new("xdg-open").arg(RELEASES_URL).spawn();
+
+    result
+        .map(|_| ())
+        .map_err(|error| format!("Impossibile aprire la pagina degli aggiornamenti: {error}"))
+}
+
+#[tauri::command]
 async fn check_for_update(
     app: tauri::AppHandle,
     pending_update: tauri::State<'_, PendingUpdate>,
@@ -431,6 +453,7 @@ pub fn run() {
             save_app_data,
             save_export_file,
             print_report,
+            open_update_page,
             check_for_update,
             download_update,
             install_update

@@ -40,17 +40,34 @@
   @media (prefers-reduced-motion: reduce){
     *{transition:none !important; animation:none !important;}
   }
+  #printReport{display:none;}
   @media print{
-    @page{size:A4 landscape;margin:12mm;}
-    body{background:#fff;}
-    .app{max-width:none;padding:0;}
-    .topbar{color:var(--ink);padding:0 0 16px;}
-    .clock-readout{color:var(--ink);}
-    .topbar-actions,.layout > section:not(.full),footer.note,#btnExportCsv{display:none !important;}
-    .layout{display:block;}
-    .panel{box-shadow:none;border:1px solid var(--paper-line);margin-bottom:14px;break-inside:avoid;}
-    table{font-size:10px;}
-    .toast,.modal-overlay{display:none !important;}
+    @page{size:A4 landscape;margin:10mm;}
+    html,body{background:#fff !important;color:#26221B;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
+    .app,.toast,.modal-overlay{display:none !important;}
+    #printReport{display:block !important;font-family:var(--font-ui);}
+    .print-sheet{break-after:page;page-break-after:always;}
+    .print-sheet:last-child{break-after:auto;page-break-after:auto;}
+    .print-header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid #D9CFAF;padding-bottom:7px;margin-bottom:9px;}
+    .print-title{font-size:17px;font-weight:700;}
+    .print-month{font:13px var(--font-mono);color:#726A57;margin-top:3px;}
+    .print-page-number{font-size:10px;color:#726A57;}
+    .print-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
+    .print-stat{border:1px solid #D9CFAF;border-radius:6px;padding:7px 9px;background:#FBF8EE;}
+    .print-stat-label{font-size:9px;color:#726A57;margin-bottom:3px;}
+    .print-stat-value{font:700 14px var(--font-mono);}
+    .print-stat-value.accent{color:#9B2C1E;}
+    .print-stat-sub{font-size:8px;color:#726A57;margin-top:2px;}
+    .print-table-title{font-size:11px;font-weight:700;margin:0 0 5px;}
+    .print-table{width:100%;border-collapse:collapse;table-layout:fixed;font:8.5px var(--font-mono);}
+    .print-table thead{display:table-header-group;}
+    .print-table tr{break-inside:avoid;page-break-inside:avoid;}
+    .print-table th{font:600 8px var(--font-ui);color:#726A57;text-align:left;padding:4px 5px;border-bottom:1px solid #D9CFAF;}
+    .print-table td{padding:4px 5px;border-bottom:1px solid rgba(217,207,175,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .print-table th:last-child,.print-table td:last-child{width:17%;}
+    .print-table .weekend td{color:#726A57;}
+    .print-table .worked td.paga{color:#9B2C1E;font-weight:700;}
+    .print-rules{margin-top:8px;font-size:8px;line-height:1.45;color:#726A57;}
   }
 
   .app{max-width:1040px;margin:0 auto;padding:28px 20px 60px;}
@@ -140,6 +157,8 @@
   }
   .field input[type=time]:focus-visible,
   .field input.smart-time:focus-visible{outline:2px solid var(--stamp);outline-offset:1px;}
+  .field input.smart-time{caret-color:transparent;cursor:text;letter-spacing:.4px;}
+  .field input.smart-time::selection{background:rgba(155,44,30,.24);color:var(--ink);}
   .stamp-btn{
     margin-top:8px;
     width:100%;
@@ -380,7 +399,7 @@
         </div>
       </div>
 
-      <div class="entry-hint">Inserisci l’orario reale del cartellino, anche se è precedente all’ora attuale. Se lasci il campo vuoto, “Salva entrata/uscita” userà l’ora del Mac.</div>
+      <div class="entry-hint">Clicca sulle ore o sui minuti per modificarli. Dopo due cifre delle ore vengono selezionati automaticamente i minuti. Se lasci il campo vuoto, “Salva entrata/uscita” userà l’ora del Mac.</div>
       <div class="worked-preview">Ore effettive (pausa esclusa): <b id="workedPreview">—</b></div>
       <div class="worked-preview">Ore retribuite: <b id="paidPreview">—</b></div>
       <div class="worked-preview">Paga di oggi: <b id="pagaPreview">—</b></div>
@@ -470,6 +489,8 @@
   </footer>
 </div>
 
+<div id="printReport" aria-hidden="true"></div>
+
 <!-- SETTINGS MODAL -->
 <div class="modal-overlay hidden" id="settingsOverlay">
   <div class="modal">
@@ -527,7 +548,7 @@
 
     <div class="modal-subhead">Aggiornamenti</div>
     <div class="update-card">
-      <p id="updateStateText">Versione installata: <span class="update-version">1.2.0</span></p>
+      <p id="updateStateText">Versione installata: <span class="update-version">1.3.0</span></p>
       <button class="btn-ghost" id="btnCheckUpdates">Controlla aggiornamenti</button>
     </div>
 
@@ -572,7 +593,7 @@
   var GIORNI_BREVI = ["L","M","M","G","V","S","D"]; // header, Monday-first
   var LS_ENTRIES = "registroOrari.entries";
   var LS_CONFIG = "registroOrari.config";
-  var APP_VERSION = "1.2.0";
+  var APP_VERSION = "1.3.0";
   var nativeInvoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke
     ? window.__TAURI__.core.invoke
     : null;
@@ -599,23 +620,113 @@
     var parts = t.split(":");
     return (parseInt(parts[0],10) * 60) + parseInt(parts[1],10);
   }
-  function formatSmartTime(value){
-    var digits = String(value || "").replace(/\D/g, "").slice(0, 4);
-    if(digits.length < 2) return digits;
-    if(digits.length === 2) return digits + ":";
-    return digits.slice(0, 2) + ":" + digits.slice(2);
+  function selectTimeSegment(input, segment){
+    input.dataset.timeSegment = segment;
+    var start = segment === "minutes" ? 3 : 0;
+    requestAnimationFrame(function(){
+      try{ input.setSelectionRange(start, start + 2); }catch(_error){}
+    });
   }
   function attachSmartTimeInput(input){
-    input.addEventListener("input", function(){
-      var formatted = formatSmartTime(input.value);
-      if(input.value !== formatted) input.value = formatted;
-      try{ input.setSelectionRange(formatted.length, formatted.length); }catch(_error){}
+    var digitBuffer = "";
+    var bufferSegment = "";
+    var originalSegment = "00";
+
+    function parts(){
+      return isValidClock(input.value) ? input.value.split(":") : ["00", "00"];
+    }
+    function segmentAtCursor(){
+      return input.dataset.timeSegment || ((input.selectionStart || 0) >= 3 ? "minutes" : "hours");
+    }
+    function replaceSegment(segment, value){
+      var clock = parts();
+      clock[segment === "minutes" ? 1 : 0] = value;
+      input.value = clock[0] + ":" + clock[1];
+      input.dataset.smartDirty = "true";
+      input.dispatchEvent(new Event("input", { bubbles:true }));
+    }
+
+    input.addEventListener("focus", function(){
+      input.dataset.smartBaseline = input.value;
+      selectTimeSegment(input, "hours");
+    });
+    input.addEventListener("click", function(){
+      selectTimeSegment(input, (input.selectionStart || 0) >= 3 ? "minutes" : "hours");
+      digitBuffer = "";
+      bufferSegment = "";
     });
     input.addEventListener("keydown", function(event){
-      if(event.key === "Backspace" && input.selectionStart === 3 && input.selectionEnd === 3 && input.value.charAt(2) === ":"){
+      var segment = segmentAtCursor();
+      if(/^\d$/.test(event.key)){
         event.preventDefault();
-        input.value = input.value.slice(0, 1);
-        input.dispatchEvent(new Event("input", { bubbles:true }));
+        if(bufferSegment !== segment){
+          digitBuffer = "";
+          bufferSegment = segment;
+          var current = parts();
+          originalSegment = current[segment === "minutes" ? 1 : 0];
+        }
+        digitBuffer = (digitBuffer + event.key).slice(-2);
+        replaceSegment(segment, digitBuffer.padStart(2, "0"));
+        selectTimeSegment(input, segment);
+        if(digitBuffer.length === 2){
+          var maximum = segment === "minutes" ? 59 : 23;
+          if(Number(digitBuffer) > maximum){
+            replaceSegment(segment, originalSegment);
+            el.entryError.textContent = segment === "minutes" ? "I minuti devono essere compresi tra 00 e 59." : "Le ore devono essere comprese tra 00 e 23.";
+            digitBuffer = "";
+            selectTimeSegment(input, segment);
+            return;
+          }
+          el.entryError.textContent = "";
+          digitBuffer = "";
+          selectTimeSegment(input, segment === "hours" ? "minutes" : "minutes");
+        }
+        return;
+      }
+      if(event.key === ":" || (event.key === "Tab" && segment === "hours")){
+        event.preventDefault();
+        digitBuffer = "";
+        selectTimeSegment(input, "minutes");
+        return;
+      }
+      if(event.key === "ArrowLeft" || event.key === "ArrowRight"){
+        event.preventDefault();
+        digitBuffer = "";
+        selectTimeSegment(input, event.key === "ArrowLeft" ? "hours" : "minutes");
+        return;
+      }
+      if(event.key === "Backspace" || event.key === "Delete"){
+        event.preventDefault();
+        digitBuffer = "";
+        if(input.selectionStart === 0 && input.selectionEnd === input.value.length){
+          input.value = "";
+          input.dataset.smartDirty = "true";
+          input.dispatchEvent(new Event("input", { bubbles:true }));
+          selectTimeSegment(input, "hours");
+          return;
+        }
+        replaceSegment(segment, "00");
+        selectTimeSegment(input, segment);
+      }
+    });
+    input.addEventListener("paste", function(event){
+      var pasted = (event.clipboardData || window.clipboardData).getData("text");
+      var digits = pasted.replace(/\D/g, "");
+      if(digits.length !== 4) return;
+      var candidate = digits.slice(0,2) + ":" + digits.slice(2);
+      if(!isValidClock(candidate)) return;
+      event.preventDefault();
+      input.value = candidate;
+      input.dataset.smartDirty = "true";
+      input.dispatchEvent(new Event("input", { bubbles:true }));
+      selectTimeSegment(input, "minutes");
+    });
+    input.addEventListener("blur", function(){
+      digitBuffer = "";
+      bufferSegment = "";
+      if(input.dataset.smartDirty === "true"){
+        input.dataset.smartDirty = "false";
+        input.dispatchEvent(new Event("change", { bubbles:true }));
       }
     });
   }
@@ -859,6 +970,7 @@
     updateProgressText: document.getElementById("updateProgressText"),
     btnUpdateLater: document.getElementById("btnUpdateLater"),
     btnInstallUpdate: document.getElementById("btnInstallUpdate"),
+    printReport: document.getElementById("printReport"),
     toast: document.getElementById("toast")
   };
 
@@ -1309,7 +1421,90 @@
     );
   });
 
+  function buildPrintReport(){
+    el.printReport.innerHTML = "";
+    var total = daysInMonth(state.viewYear, state.viewMonth);
+    var split = Math.ceil(total / 2);
+    var ranges = [[0, split], [split, total]];
+    var rows = Array.from(el.tableBody.children);
+    var stats = monthStats(state.viewYear, state.viewMonth);
+    var normalHead = document.querySelector(".layout table thead");
+
+    ranges.forEach(function(range, pageIndex){
+      var sheet = document.createElement("section");
+      sheet.className = "print-sheet";
+      var header = document.createElement("div");
+      header.className = "print-header";
+      var heading = document.createElement("div");
+      var title = document.createElement("div");
+      title.className = "print-title";
+      title.textContent = (state.config.nomeApp || "Registro Presenze").trim();
+      var month = document.createElement("div");
+      month.className = "print-month";
+      month.textContent = cap(MESI[state.viewMonth]) + " " + state.viewYear;
+      heading.appendChild(title);
+      heading.appendChild(month);
+      var pageNumber = document.createElement("div");
+      pageNumber.className = "print-page-number";
+      pageNumber.textContent = "Pagina " + (pageIndex + 1) + " di 2";
+      header.appendChild(heading);
+      header.appendChild(pageNumber);
+      sheet.appendChild(header);
+
+      if(pageIndex === 0){
+        var summary = document.createElement("div");
+        summary.className = "print-summary";
+        [
+          ["Giorni lavorati", String(stats.giorni), stats.ferie + " ferie · " + stats.assenze + " assenze", false],
+          ["Ore effettive", minutesToLabel(stats.oreMin), "", false],
+          ["Paga stimata", eur(stats.paga), "prima della busta paga", true],
+          ["Penalità ritardi", minutesToLabel(stats.penalitaMin), "totale decurtato", false]
+        ].forEach(function(item){
+          var stat = document.createElement("div");
+          stat.className = "print-stat";
+          var label = document.createElement("div");
+          label.className = "print-stat-label";
+          label.textContent = item[0];
+          var value = document.createElement("div");
+          value.className = "print-stat-value" + (item[3] ? " accent" : "");
+          value.textContent = item[1];
+          stat.appendChild(label);
+          stat.appendChild(value);
+          if(item[2]){
+            var sub = document.createElement("div");
+            sub.className = "print-stat-sub";
+            sub.textContent = item[2];
+            stat.appendChild(sub);
+          }
+          summary.appendChild(stat);
+        });
+        sheet.appendChild(summary);
+      }
+
+      var tableTitle = document.createElement("div");
+      tableTitle.className = "print-table-title";
+      tableTitle.textContent = "Tabulato mensile · giorni " + (range[0] + 1) + "–" + range[1];
+      sheet.appendChild(tableTitle);
+      var table = document.createElement("table");
+      table.className = "print-table";
+      table.appendChild(normalHead.cloneNode(true));
+      var body = document.createElement("tbody");
+      rows.slice(range[0], range[1]).forEach(function(row){ body.appendChild(row.cloneNode(true)); });
+      table.appendChild(body);
+      sheet.appendChild(table);
+
+      if(pageIndex === 1){
+        var rules = document.createElement("div");
+        rules.className = "print-rules";
+        rules.textContent = "Le 08:30 sono comprese nella tolleranza. Dalle 08:31 scatta −30 min; alle 09:00 −60 min; alle 09:30 −90 min e così via. Il sabato 08:00–13:00 e il sabato di ferie valgono una giornata intera; il lavoro dopo le 13:00 è straordinario alla tariffa normale, senza pausa.";
+        sheet.appendChild(rules);
+      }
+      el.printReport.appendChild(sheet);
+    });
+  }
+
   el.btnPrint.addEventListener("click", async function(){
+    buildPrintReport();
     if(nativeInvoke){
       try{
         await nativeInvoke("print_report");
@@ -1326,6 +1521,13 @@
   var updateDownloadRunning = false;
   var updateReady = false;
   var lastAutomaticUpdateCheck = 0;
+  var isMacOS = /Macintosh|Mac OS X/.test(navigator.userAgent);
+
+  function readableError(error){
+    if(typeof error === "string") return error;
+    if(error && typeof error.message === "string") return error.message;
+    try{ return JSON.stringify(error); }catch(_error){ return String(error); }
+  }
 
   async function downloadAvailableUpdate(){
     if(updateDownloadRunning || updateReady) return;
@@ -1345,7 +1547,7 @@
     }catch(err){
       console.error("Download automatico non riuscito", err);
       el.updateProgress.classList.remove("visible");
-      el.updateProgressText.textContent = "Download automatico non riuscito. Puoi riprovare dal pulsante.";
+      el.updateProgressText.textContent = "Download automatico non riuscito: " + readableError(err);
       el.btnInstallUpdate.disabled = false;
       el.btnInstallUpdate.textContent = "Scarica e installa";
     }finally{
@@ -1373,14 +1575,16 @@
         updateReady = false;
         el.availableVersion.textContent = "v" + info.version;
         el.updateNotes.textContent = info.notes || "Miglioramenti e correzioni per Registro Presenze.";
-        el.updateProgress.classList.add("visible");
-        el.updateProgressText.textContent = "Preparazione del download automatico…";
-        el.btnInstallUpdate.disabled = true;
-        el.btnInstallUpdate.textContent = "Preparazione…";
+        el.updateProgress.classList.toggle("visible", !isMacOS);
+        el.updateProgressText.textContent = isMacOS
+          ? "Su Mac useremo l’installazione manuale sicura finché la correzione ufficiale di Tauri non sarà disponibile."
+          : "Preparazione del download automatico…";
+        el.btnInstallUpdate.disabled = !isMacOS;
+        el.btnInstallUpdate.textContent = isMacOS ? "Apri aggiornamento per Mac" : "Preparazione…";
         el.btnUpdateLater.disabled = false;
         el.updateOverlay.classList.remove("hidden");
         el.updateStateText.textContent = "Nuova versione disponibile: v" + info.version;
-        downloadAvailableUpdate();
+        if(!isMacOS) downloadAvailableUpdate();
       }else{
         el.updateStateText.innerHTML = 'Versione installata: <span class="update-version">' + APP_VERSION + '</span> · aggiornata';
         if(manual) showToast("Hai già la versione più recente");
@@ -1401,6 +1605,20 @@
     if(e.target === el.updateOverlay && !el.btnInstallUpdate.disabled) el.updateOverlay.classList.add("hidden");
   });
   el.btnInstallUpdate.addEventListener("click", async function(){
+    if(isMacOS){
+      el.btnInstallUpdate.disabled = true;
+      try{
+        await nativeInvoke("open_update_page");
+        el.updateProgressText.textContent = "Scarica il file aarch64.dmg, aprilo e trascina Registro Presenze su Applications scegliendo Sostituisci.";
+      }catch(err){
+        el.updateProgressText.textContent = "Impossibile aprire la pagina dell’aggiornamento: " + readableError(err);
+      }finally{
+        el.btnInstallUpdate.disabled = false;
+        el.btnInstallUpdate.textContent = "Apri aggiornamento per Mac";
+        el.btnUpdateLater.disabled = false;
+      }
+      return;
+    }
     el.btnInstallUpdate.disabled = true;
     el.btnUpdateLater.disabled = true;
     el.btnInstallUpdate.textContent = updateReady ? "Installazione e riavvio…" : "Download e installazione…";
@@ -1412,7 +1630,7 @@
     }catch(err){
       console.error("Installazione aggiornamento non riuscita", err);
       el.updateProgress.classList.remove("visible");
-      el.updateProgressText.textContent = "Aggiornamento non riuscito. I dati non sono stati modificati.";
+      el.updateProgressText.textContent = "Aggiornamento non riuscito: " + readableError(err);
       el.btnInstallUpdate.disabled = false;
       el.btnUpdateLater.disabled = false;
       el.btnInstallUpdate.textContent = updateReady ? "Riprova installazione" : "Riprova download";

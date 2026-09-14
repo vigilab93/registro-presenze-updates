@@ -7,7 +7,7 @@ Questa cartella contiene un solo progetto che produce:
 
 L’app non usa la memoria di Chrome, Safari o Edge. Ogni modifica viene salvata in un database SQLite e copiata automaticamente nella cartella `Documenti/Registro Presenze/Backup`.
 
-La versione 1.1.0 introduce gli aggiornamenti automatici firmati. Dalla versione 1.2.0 l’app controlla gli aggiornamenti all’avvio e periodicamente, li scarica in background e permette di installarli con un solo pulsante senza disinstallare la versione presente. I dati personali non vengono inclusi negli aggiornamenti e restano sul computer.
+La versione 1.1.0 introduce gli aggiornamenti firmati. Dalla versione 1.3.0 l’app controlla automaticamente gli aggiornamenti all’avvio e periodicamente. Su Windows può installarli e riavviarsi; su macOS apre direttamente la pagina dell’ultima versione per scaricare il file `aarch64.dmg`, evitando il difetto di sostituzione dell’app presente nell’updater Tauri attuale. I dati personali non vengono inclusi negli aggiornamenti e restano sul computer.
 
 ## Fase A — preparare il Mac di Vigi
 
