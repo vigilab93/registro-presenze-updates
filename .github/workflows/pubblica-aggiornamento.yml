@@ -9,6 +9,7 @@ jobs:
       contents: write
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         include:
           - platform: macos-latest
@@ -47,6 +48,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
+          retryAttempts: 3
           tagName: registro-presenze-v__VERSION__
           releaseName: Registro Presenze v__VERSION__
           releaseBody: Aggiornamento di Registro Presenze. I dati e i backup personali restano invariati.
