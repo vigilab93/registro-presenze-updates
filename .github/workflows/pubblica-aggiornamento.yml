@@ -51,8 +51,7 @@ jobs:
           retryAttempts: 3
           tagName: registro-presenze-v__VERSION__
           releaseName: Registro Presenze v__VERSION__
-          releaseBody: Aggiornamento di Registro Presenze. I dati e i backup personali restano invariati.
+          releaseBody: "Stampa e salvataggio PDF ripristinati; inserimento dell’orario più rapido; aggiornamenti rilevati e scaricati automaticamente. I dati e i backup personali restano invariati."
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
-

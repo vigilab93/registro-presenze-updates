@@ -7,7 +7,7 @@ Questa cartella contiene un solo progetto che produce:
 
 L’app non usa la memoria di Chrome, Safari o Edge. Ogni modifica viene salvata in un database SQLite e copiata automaticamente nella cartella `Documenti/Registro Presenze/Backup`.
 
-La versione 1.1.0 introduce gli aggiornamenti automatici firmati. Dopo avere installato una volta questa versione, l’app controllerà all’avvio se esiste una versione più recente e consentirà di installarla senza disinstallare quella presente. I dati personali non vengono inclusi negli aggiornamenti e restano sul computer.
+La versione 1.1.0 introduce gli aggiornamenti automatici firmati. Dalla versione 1.2.0 l’app controlla gli aggiornamenti all’avvio e periodicamente, li scarica in background e permette di installarli con un solo pulsante senza disinstallare la versione presente. I dati personali non vengono inclusi negli aggiornamenti e restano sul computer.
 
 ## Fase A — preparare il Mac di Vigi
 
@@ -121,8 +121,9 @@ Se l’archivio principale è danneggiato o assente, all’avvio l’app tenta a
 
 - L’app controlla automaticamente gli aggiornamenti dopo l’avvio.
 - Il controllo manuale si trova in **Impostazioni → Aggiornamenti**.
-- L’utente può scegliere **Più tardi** oppure **Scarica e installa**.
+- Quando trova una nuova versione, l’app la scarica e la verifica automaticamente in background.
+- L’utente può scegliere **Più tardi** oppure **Installa e riavvia**.
 - Database, impostazioni e backup non vengono sostituiti dall’aggiornamento.
 - Gli aggiornamenti vengono accettati soltanto se firmati con la chiave privata originale.
 
-La chiave privata si trova sul Mac di Vigi in `~/.registro-presenze/registro-presenze-v2.key`. Non deve essere caricata nel repository, inviata in chat o passata ai colleghi. Anche la password deve essere conservata separatamente e in modo sicuro.
+La chiave privata attiva si trova sul Mac di Vigi in `~/.registro-presenze/registro-presenze-v2.key`. Non deve essere caricata nel repository o passata ai colleghi. Anche la password deve essere conservata separatamente.

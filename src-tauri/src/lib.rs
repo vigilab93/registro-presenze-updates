@@ -39,7 +39,13 @@ struct UpdateInfo {
     date: Option<String>,
 }
 
-struct PendingUpdate(Mutex<Option<Update>>);
+#[derive(Default)]
+struct PendingUpdateData {
+    update: Option<Update>,
+    bytes: Option<Vec<u8>>,
+}
+
+struct PendingUpdate(Mutex<PendingUpdateData>);
 
 struct StoragePaths {
     database: PathBuf,
@@ -302,6 +308,13 @@ fn save_export_file(file_name: String, contents: String, app: tauri::AppHandle) 
 }
 
 #[tauri::command]
+fn print_report(window: tauri::WebviewWindow) -> Result<(), String> {
+    window
+        .print()
+        .map_err(|error| format!("Impossibile aprire la stampa: {error}"))
+}
+
+#[tauri::command]
 async fn check_for_update(
     app: tauri::AppHandle,
     pending_update: tauri::State<'_, PendingUpdate>,
@@ -323,8 +336,48 @@ async fn check_for_update(
         .0
         .lock()
         .map_err(|_| "Impossibile preparare l'aggiornamento".to_string())?;
-    *pending = update;
+    pending.update = update;
+    pending.bytes = None;
     Ok(info)
+}
+
+#[tauri::command]
+async fn download_update(
+    pending_update: tauri::State<'_, PendingUpdate>,
+) -> Result<(), String> {
+    let update = {
+        let mut pending = pending_update
+            .0
+            .lock()
+            .map_err(|_| "Impossibile preparare il download".to_string())?;
+        if pending.bytes.is_some() {
+            return Ok(());
+        }
+        pending
+            .update
+            .take()
+            .ok_or_else(|| "Nessun aggiornamento disponibile".to_string())?
+    };
+
+    let bytes = match update.download(|_, _| {}, || {}).await {
+        Ok(bytes) => bytes,
+        Err(error) => {
+            let mut pending = pending_update
+                .0
+                .lock()
+                .map_err(|_| "Download non riuscito e aggiornamento non recuperabile".to_string())?;
+            pending.update = Some(update);
+            return Err(format!("Download non riuscito: {error}"));
+        }
+    };
+
+    let mut pending = pending_update
+        .0
+        .lock()
+        .map_err(|_| "Impossibile conservare l'aggiornamento scaricato".to_string())?;
+    pending.update = Some(update);
+    pending.bytes = Some(bytes);
+    Ok(())
 }
 
 #[tauri::command]
@@ -332,20 +385,36 @@ async fn install_update(
     app: tauri::AppHandle,
     pending_update: tauri::State<'_, PendingUpdate>,
 ) -> Result<(), String> {
-    let update = {
+    let (update, bytes) = {
         let mut pending = pending_update
             .0
             .lock()
             .map_err(|_| "Impossibile aprire l'aggiornamento".to_string())?;
-        pending
+        let update = pending
+            .update
             .take()
-            .ok_or_else(|| "Nessun aggiornamento pronto da installare".to_string())?
+            .ok_or_else(|| "Nessun aggiornamento pronto da installare".to_string())?;
+        (update, pending.bytes.take())
     };
 
-    update
-        .download_and_install(|_, _| {}, || {})
-        .await
-        .map_err(|error| format!("Installazione non riuscita: {error}"))?;
+    let install_result = if let Some(ref bytes) = bytes {
+        update
+            .install(bytes)
+    } else {
+        update
+            .download_and_install(|_, _| {}, || {})
+            .await
+    };
+
+    if let Err(error) = install_result {
+        let mut pending = pending_update
+            .0
+            .lock()
+            .map_err(|_| format!("Installazione non riuscita: {error}"))?;
+        pending.update = Some(update);
+        pending.bytes = bytes;
+        return Err(format!("Installazione non riuscita: {error}"));
+    }
 
     app.restart();
     #[allow(unreachable_code)]
@@ -356,12 +425,14 @@ async fn install_update(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .manage(PendingUpdate(Mutex::new(None)))
+        .manage(PendingUpdate(Mutex::new(PendingUpdateData::default())))
         .invoke_handler(tauri::generate_handler![
             load_app_data,
             save_app_data,
             save_export_file,
+            print_report,
             check_for_update,
+            download_update,
             install_update
         ])
         .run(tauri::generate_context!())

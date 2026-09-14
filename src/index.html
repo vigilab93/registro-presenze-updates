@@ -127,7 +127,8 @@
   .field-row{display:flex;gap:14px;margin:14px 0;flex-wrap:wrap;}
   .field{flex:1;min-width:130px;}
   .field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:6px;}
-  .field input[type=time]{
+  .field input[type=time],
+  .field input.smart-time{
     width:100%;
     font-family:var(--font-mono);
     font-size:20px;
@@ -137,7 +138,8 @@
     background:var(--paper-raised);
     color:var(--ink);
   }
-  .field input[type=time]:focus-visible{outline:2px solid var(--stamp);outline-offset:1px;}
+  .field input[type=time]:focus-visible,
+  .field input.smart-time:focus-visible{outline:2px solid var(--stamp);outline-offset:1px;}
   .stamp-btn{
     margin-top:8px;
     width:100%;
@@ -368,12 +370,12 @@
       <div class="field-row" id="workTimeFields">
         <div class="field">
           <label for="inEntrata">Entrata</label>
-          <input type="time" id="inEntrata">
+          <input type="text" class="smart-time" id="inEntrata" inputmode="numeric" maxlength="5" placeholder="08:15" autocomplete="off" spellcheck="false">
           <button class="stamp-btn" id="btnTimbraEntrata">Salva entrata</button>
         </div>
         <div class="field">
           <label for="inUscita">Uscita</label>
-          <input type="time" id="inUscita">
+          <input type="text" class="smart-time" id="inUscita" inputmode="numeric" maxlength="5" placeholder="17:00" autocomplete="off" spellcheck="false">
           <button class="stamp-btn" id="btnTimbraUscita">Salva uscita</button>
         </div>
       </div>
@@ -525,7 +527,7 @@
 
     <div class="modal-subhead">Aggiornamenti</div>
     <div class="update-card">
-      <p id="updateStateText">Versione installata: <span class="update-version">1.1.0</span></p>
+      <p id="updateStateText">Versione installata: <span class="update-version">1.2.0</span></p>
       <button class="btn-ghost" id="btnCheckUpdates">Controlla aggiornamenti</button>
     </div>
 
@@ -554,7 +556,7 @@
     <div style="font-size:11.5px;color:var(--ink-soft);line-height:1.5;" id="updateProgressText">I dati e i backup resteranno invariati.</div>
     <div class="modal-actions">
       <button class="btn-ghost" id="btnUpdateLater">Più tardi</button>
-      <button class="btn-primary" id="btnInstallUpdate">Scarica e installa</button>
+      <button class="btn-primary" id="btnInstallUpdate">Preparazione…</button>
     </div>
   </div>
 </div>
@@ -570,7 +572,7 @@
   var GIORNI_BREVI = ["L","M","M","G","V","S","D"]; // header, Monday-first
   var LS_ENTRIES = "registroOrari.entries";
   var LS_CONFIG = "registroOrari.config";
-  var APP_VERSION = "1.1.0";
+  var APP_VERSION = "1.2.0";
   var nativeInvoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke
     ? window.__TAURI__.core.invoke
     : null;
@@ -588,10 +590,34 @@
     return new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10)).getDay() === 6;
   }
 
+  function isValidClock(t){
+    var match = /^(\d{2}):(\d{2})$/.exec(t || "");
+    return Boolean(match && Number(match[1]) <= 23 && Number(match[2]) <= 59);
+  }
   function timeToMinutes(t){
-    if(!t) return null;
+    if(!isValidClock(t)) return null;
     var parts = t.split(":");
     return (parseInt(parts[0],10) * 60) + parseInt(parts[1],10);
+  }
+  function formatSmartTime(value){
+    var digits = String(value || "").replace(/\D/g, "").slice(0, 4);
+    if(digits.length < 2) return digits;
+    if(digits.length === 2) return digits + ":";
+    return digits.slice(0, 2) + ":" + digits.slice(2);
+  }
+  function attachSmartTimeInput(input){
+    input.addEventListener("input", function(){
+      var formatted = formatSmartTime(input.value);
+      if(input.value !== formatted) input.value = formatted;
+      try{ input.setSelectionRange(formatted.length, formatted.length); }catch(_error){}
+    });
+    input.addEventListener("keydown", function(event){
+      if(event.key === "Backspace" && input.selectionStart === 3 && input.selectionEnd === 3 && input.value.charAt(2) === ":"){
+        event.preventDefault();
+        input.value = input.value.slice(0, 1);
+        input.dispatchEvent(new Event("input", { bubbles:true }));
+      }
+    });
   }
   function minutesToLabel(min){
     if(min === null || min === undefined) return "—";
@@ -1118,6 +1144,8 @@
   }
 
   // ---- Events: entry panel ----
+  attachSmartTimeInput(el.inEntrata);
+  attachSmartTimeInput(el.inUscita);
   el.inEntrata.addEventListener("input", updateWorkedPreview);
   el.inUscita.addEventListener("input", updateWorkedPreview);
   function selectDayType(tipo){
@@ -1132,10 +1160,18 @@
   el.btnTipoAssenza.addEventListener("click", function(){ selectDayType("assenza"); });
   el.inEntrata.addEventListener("change", function(){
     updateWorkedPreview();
+    if(el.inEntrata.value && !isValidClock(el.inEntrata.value)){
+      el.entryError.textContent = "Inserisci l’entrata completa nel formato HH:MM.";
+      return;
+    }
     if(el.inEntrata.value) saveCurrentEntry("Entrata " + el.inEntrata.value + " salvata");
   });
   el.inUscita.addEventListener("change", function(){
     updateWorkedPreview();
+    if(el.inUscita.value && !isValidClock(el.inUscita.value)){
+      el.entryError.textContent = "Inserisci l’uscita completa nel formato HH:MM.";
+      return;
+    }
     if(el.inUscita.value) saveCurrentEntry("Uscita " + el.inUscita.value + " salvata");
   });
 
@@ -1187,6 +1223,10 @@
     var existing = state.entries[state.selectedKey] || {};
     var nota = existing.nota || "";
     el.entryError.textContent = "";
+    if((a && !isValidClock(a)) || (b && !isValidClock(b))){
+      el.entryError.textContent = "Completa gli orari nel formato HH:MM.";
+      return false;
+    }
     if(tipo === "lavoro" && !a && !b){
       if(nota) state.entries[state.selectedKey] = { tipo:"lavoro", entrata:"", uscita:"", nota:nota };
       else delete state.entries[state.selectedKey];
@@ -1269,31 +1309,78 @@
     );
   });
 
-  el.btnPrint.addEventListener("click", function(){ window.print(); });
+  el.btnPrint.addEventListener("click", async function(){
+    if(nativeInvoke){
+      try{
+        await nativeInvoke("print_report");
+        return;
+      }catch(err){
+        console.warn("Stampa nativa non disponibile, uso la stampa della WebView", err);
+      }
+    }
+    window.print();
+  });
 
   // ---- Aggiornamenti automatici ----
   var updateCheckRunning = false;
+  var updateDownloadRunning = false;
+  var updateReady = false;
+  var lastAutomaticUpdateCheck = 0;
+
+  async function downloadAvailableUpdate(){
+    if(updateDownloadRunning || updateReady) return;
+    updateDownloadRunning = true;
+    el.btnInstallUpdate.disabled = true;
+    el.btnInstallUpdate.textContent = "Download…";
+    el.updateProgress.classList.add("visible");
+    el.updateProgressText.textContent = "Download automatico dell’aggiornamento in corso…";
+    try{
+      await nativeInvoke("download_update");
+      updateReady = true;
+      el.updateProgress.classList.remove("visible");
+      el.updateProgressText.textContent = "Aggiornamento scaricato e verificato. I dati resteranno invariati.";
+      el.btnInstallUpdate.disabled = false;
+      el.btnInstallUpdate.textContent = "Installa e riavvia";
+      el.updateStateText.textContent = "Aggiornamento pronto per l’installazione";
+    }catch(err){
+      console.error("Download automatico non riuscito", err);
+      el.updateProgress.classList.remove("visible");
+      el.updateProgressText.textContent = "Download automatico non riuscito. Puoi riprovare dal pulsante.";
+      el.btnInstallUpdate.disabled = false;
+      el.btnInstallUpdate.textContent = "Scarica e installa";
+    }finally{
+      updateDownloadRunning = false;
+    }
+  }
+
   async function checkForUpdates(manual){
     if(!nativeInvoke){
       if(manual) showToast("Gli aggiornamenti automatici sono disponibili nell’app installata");
       return;
     }
+    if(updateReady || updateDownloadRunning){
+      if(manual) el.updateOverlay.classList.remove("hidden");
+      return;
+    }
     if(updateCheckRunning) return;
+    if(!manual) lastAutomaticUpdateCheck = Date.now();
     updateCheckRunning = true;
     el.btnCheckUpdates.disabled = true;
     el.updateStateText.textContent = "Controllo aggiornamenti in corso…";
     try{
       var info = await nativeInvoke("check_for_update");
       if(info){
+        updateReady = false;
         el.availableVersion.textContent = "v" + info.version;
         el.updateNotes.textContent = info.notes || "Miglioramenti e correzioni per Registro Presenze.";
-        el.updateProgress.classList.remove("visible");
-        el.updateProgressText.textContent = "I dati e i backup resteranno invariati.";
-        el.btnInstallUpdate.disabled = false;
-        el.btnInstallUpdate.textContent = "Scarica e installa";
+        el.updateProgress.classList.add("visible");
+        el.updateProgressText.textContent = "Preparazione del download automatico…";
+        el.btnInstallUpdate.disabled = true;
+        el.btnInstallUpdate.textContent = "Preparazione…";
         el.btnUpdateLater.disabled = false;
         el.updateOverlay.classList.remove("hidden");
         el.updateStateText.textContent = "Nuova versione disponibile: v" + info.version;
+        downloadAvailableUpdate();
       }else{
         el.updateStateText.innerHTML = 'Versione installata: <span class="update-version">' + APP_VERSION + '</span> · aggiornata';
         if(manual) showToast("Hai già la versione più recente");
@@ -1316,9 +1403,9 @@
   el.btnInstallUpdate.addEventListener("click", async function(){
     el.btnInstallUpdate.disabled = true;
     el.btnUpdateLater.disabled = true;
-    el.btnInstallUpdate.textContent = "Installazione…";
+    el.btnInstallUpdate.textContent = updateReady ? "Installazione e riavvio…" : "Download e installazione…";
     el.updateProgress.classList.add("visible");
-    el.updateProgressText.textContent = "Download e installazione in corso. Non chiudere l’app.";
+      el.updateProgressText.textContent = updateReady ? "Installazione in corso. L’app si riavvierà automaticamente." : "Download e installazione in corso. Non chiudere l’app.";
     try{
       await nativeSaveQueue.catch(function(){});
       await nativeInvoke("install_update");
@@ -1328,7 +1415,7 @@
       el.updateProgressText.textContent = "Aggiornamento non riuscito. I dati non sono stati modificati.";
       el.btnInstallUpdate.disabled = false;
       el.btnUpdateLater.disabled = false;
-      el.btnInstallUpdate.textContent = "Riprova";
+      el.btnInstallUpdate.textContent = updateReady ? "Riprova installazione" : "Riprova download";
     }
   });
 
@@ -1430,6 +1517,12 @@
   renderAll();
   setInterval(renderClock, 30000);
   setTimeout(function(){ checkForUpdates(false); }, 1800);
+  setInterval(function(){ checkForUpdates(false); }, 6 * 60 * 60 * 1000);
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState === "visible" && Date.now() - lastAutomaticUpdateCheck > 15 * 60 * 1000){
+      checkForUpdates(false);
+    }
+  });
 
 })();
 </script>
