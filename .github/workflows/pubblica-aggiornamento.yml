@@ -49,9 +49,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           retryAttempts: 3
-          tagName: registro-presenze-v1.3.0
-          releaseName: Registro Presenze v1.3.0
-          releaseBody: "Orario con selezione separata di ore e minuti; report PDF diviso correttamente in due pagine A4; aggiornamento Mac reso sicuro con collegamento diretto alla versione corretta. I dati e i backup personali restano invariati."
+          tagName: registro-presenze-v1.3.1
+          releaseName: Registro Presenze v1.3.1
+          releaseBody: "Report mensile raccolto in una sola pagina A4; uscita anticipata calcolata a scaglioni di 30 minuti come il ritardo in entrata. I dati e i backup personali restano invariati."
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}

@@ -46,28 +46,27 @@
     html,body{background:#fff !important;color:#26221B;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
     .app,.toast,.modal-overlay{display:none !important;}
     #printReport{display:block !important;font-family:var(--font-ui);}
-    .print-sheet{break-after:page;page-break-after:always;}
-    .print-sheet:last-child{break-after:auto;page-break-after:auto;}
-    .print-header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid #D9CFAF;padding-bottom:7px;margin-bottom:9px;}
-    .print-title{font-size:17px;font-weight:700;}
-    .print-month{font:13px var(--font-mono);color:#726A57;margin-top:3px;}
-    .print-page-number{font-size:10px;color:#726A57;}
-    .print-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
-    .print-stat{border:1px solid #D9CFAF;border-radius:6px;padding:7px 9px;background:#FBF8EE;}
-    .print-stat-label{font-size:9px;color:#726A57;margin-bottom:3px;}
-    .print-stat-value{font:700 14px var(--font-mono);}
+    .print-sheet{break-inside:avoid;page-break-inside:avoid;}
+    .print-header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid #D9CFAF;padding-bottom:5px;margin-bottom:6px;}
+    .print-title{font-size:15px;font-weight:700;}
+    .print-month{font:11px var(--font-mono);color:#726A57;margin-top:2px;}
+    .print-page-number{font-size:8px;color:#726A57;}
+    .print-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:7px;}
+    .print-stat{border:1px solid #D9CFAF;border-radius:5px;padding:5px 7px;background:#FBF8EE;}
+    .print-stat-label{font-size:7.5px;color:#726A57;margin-bottom:2px;}
+    .print-stat-value{font:700 11px var(--font-mono);}
     .print-stat-value.accent{color:#9B2C1E;}
-    .print-stat-sub{font-size:8px;color:#726A57;margin-top:2px;}
-    .print-table-title{font-size:11px;font-weight:700;margin:0 0 5px;}
-    .print-table{width:100%;border-collapse:collapse;table-layout:fixed;font:8.5px var(--font-mono);}
+    .print-stat-sub{font-size:7px;color:#726A57;margin-top:1px;}
+    .print-table-title{font-size:9px;font-weight:700;margin:0 0 3px;}
+    .print-table{width:100%;border-collapse:collapse;table-layout:fixed;font:7.2px/1.1 var(--font-mono);}
     .print-table thead{display:table-header-group;}
     .print-table tr{break-inside:avoid;page-break-inside:avoid;}
-    .print-table th{font:600 8px var(--font-ui);color:#726A57;text-align:left;padding:4px 5px;border-bottom:1px solid #D9CFAF;}
-    .print-table td{padding:4px 5px;border-bottom:1px solid rgba(217,207,175,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .print-table th{font:600 7px/1.1 var(--font-ui);color:#726A57;text-align:left;padding:2px 4px;border-bottom:1px solid #D9CFAF;}
+    .print-table td{padding:2px 4px;border-bottom:1px solid rgba(217,207,175,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .print-table th:last-child,.print-table td:last-child{width:17%;}
     .print-table .weekend td{color:#726A57;}
     .print-table .worked td.paga{color:#9B2C1E;font-weight:700;}
-    .print-rules{margin-top:8px;font-size:8px;line-height:1.45;color:#726A57;}
+    .print-rules{margin-top:5px;font-size:6.8px;line-height:1.3;color:#726A57;}
   }
 
   .app{max-width:1040px;margin:0 auto;padding:28px 20px 60px;}
@@ -455,7 +454,7 @@
           <div class="sub">prima della busta paga</div>
         </div>
         <div class="stat">
-          <div class="label">Penalità ritardi</div>
+          <div class="label">Decurtazioni orarie</div>
           <div class="value" id="statPenalita">0h 00m</div>
           <div class="sub">totale decurtato</div>
         </div>
@@ -479,6 +478,7 @@
         </table>
       </div>
       <div style="font-size:11.5px;color:var(--ink-soft);margin-top:10px;">Le 08:30 sono comprese nella tolleranza. Dalle 08:31 scatta −30 min; alle 09:00 −60 min; alle 09:30 −90 min e così via.</div>
+      <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Anche l’uscita anticipata segue scaglioni di 30 minuti: dalle 16:31 alle 16:59 −30 min; dalle 16:01 alle 16:30 −60 min; dalle 15:31 alle 16:00 −90 min.</div>
       <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Il sabato 08:00–13:00 e il sabato di ferie valgono una giornata intera. Il lavoro dopo le 13:00 è straordinario pagato alla tariffa normale, senza pausa.</div>
     </section>
 
@@ -548,7 +548,7 @@
 
     <div class="modal-subhead">Aggiornamenti</div>
     <div class="update-card">
-      <p id="updateStateText">Versione installata: <span class="update-version">1.3.0</span></p>
+      <p id="updateStateText">Versione installata: <span class="update-version">1.3.1</span></p>
       <button class="btn-ghost" id="btnCheckUpdates">Controlla aggiornamenti</button>
     </div>
 
@@ -593,7 +593,7 @@
   var GIORNI_BREVI = ["L","M","M","G","V","S","D"]; // header, Monday-first
   var LS_ENTRIES = "registroOrari.entries";
   var LS_CONFIG = "registroOrari.config";
-  var APP_VERSION = "1.3.0";
+  var APP_VERSION = "1.3.1";
   var nativeInvoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke
     ? window.__TAURI__.core.invoke
     : null;
@@ -788,7 +788,8 @@
   }
 
   // Calcolo retribuzione: entro la tolleranza l'inizio pagato resta 08:15.
-  // Dopo le 08:30 si perdono 30 minuti a scaglioni: 08:31=-30, 09:00=-60, 09:30=-90.
+  // Ingresso e uscita anticipata usano gli stessi scaglioni: ogni frazione iniziata
+  // vale 30 minuti; sul confine esatto scatta lo scaglione successivo.
   function computePagaGiorno(entrata, uscita, cfg, isSaturday){
     var min = computeWorkedMinutes(entrata, uscita, cfg, isSaturday);
     if(min === null) return { worked:false, paga:0, penalizzato:false, penaleValore:0, penaleMinuti:0, paidMinutes:0 };
@@ -797,35 +798,34 @@
     var soglia = timeToMinutes(cfg.ingressoPrevisto) + cfg.tolleranzaMin;
     var arrivo = timeToMinutes(entrata);
     var scaglione = Math.max(1, Number(cfg.penaleMin) || 30);
-    var penaleMinuti = arrivo > soglia ? (Math.floor((arrivo - soglia) / scaglione) + 1) * scaglione : 0;
-    var penalizzato = penaleMinuti > 0;
-    if(isSaturday){
-      var fineSabato = timeToMinutes(cfg.fineMattina); // 13:00
-      var uscitaSabato = timeToMinutes(uscita);
-      var uscitaAnticipata = Math.max(0, fineSabato - uscitaSabato);
-      var straordinarioMinuti = Math.max(0, uscitaSabato - fineSabato);
-      var paidSaturday = Math.max(0, standardMin - penaleMinuti - uscitaAnticipata + straordinarioMinuti);
-      return {
-        worked:true,
-        paga:paidSaturday * tariffaMin,
-        penalizzato:penalizzato,
-        penaleValore:penaleMinuti * tariffaMin,
-        penaleMinuti:penaleMinuti,
-        paidMinutes:paidSaturday,
-        actualMinutes:min,
-        sabato:true,
-        uscitaAnticipataMinuti:uscitaAnticipata,
-        straordinarioMinuti:straordinarioMinuti,
-        straordinarioValore:straordinarioMinuti * tariffaMin
-      };
-    }
-    var inizioPagato = timeToMinutes(cfg.ingressoPrevisto) + penaleMinuti;
+    var ritardoMinuti = arrivo > soglia ? (Math.floor((arrivo - soglia) / scaglione) + 1) * scaglione : 0;
     var fine = timeToMinutes(uscita);
-    var paidMinutes = Math.max(0, fine - inizioPagato - breakOverlapMinutes(inizioPagato, fine, cfg));
+    var finePrevista = timeToMinutes(isSaturday ? cfg.fineMattina : cfg.uscitaPrevista);
+    var anticipoReale = Math.max(0, finePrevista - fine);
+    if(!isSaturday && anticipoReale > 0){
+      anticipoReale = Math.max(0, anticipoReale - breakOverlapMinutes(fine, finePrevista, cfg));
+    }
+    var uscitaAnticipataMinuti = anticipoReale > 0
+      ? (Math.floor(anticipoReale / scaglione) + 1) * scaglione
+      : 0;
+    var straordinarioMinuti = Math.max(0, fine - finePrevista);
+    var penaleMinuti = ritardoMinuti + uscitaAnticipataMinuti;
+    var paidMinutes = Math.max(0, standardMin - penaleMinuti + straordinarioMinuti);
     var paga = paidMinutes * tariffaMin;
-    var pagaPienaAlleStesseOre = Math.max(0, fine - timeToMinutes(cfg.ingressoPrevisto) - breakOverlapMinutes(timeToMinutes(cfg.ingressoPrevisto), fine, cfg)) * tariffaMin;
-    var penaleValore = Math.max(0, pagaPienaAlleStesseOre - paga);
-    return { worked:true, paga:paga, penalizzato:penalizzato, penaleValore:penaleValore, penaleMinuti:penaleMinuti, paidMinutes:paidMinutes, actualMinutes:min };
+    return {
+      worked:true,
+      paga:paga,
+      penalizzato:penaleMinuti > 0,
+      penaleValore:penaleMinuti * tariffaMin,
+      penaleMinuti:penaleMinuti,
+      ritardoMinuti:ritardoMinuti,
+      uscitaAnticipataMinuti:uscitaAnticipataMinuti,
+      paidMinutes:paidMinutes,
+      actualMinutes:min,
+      sabato:Boolean(isSaturday),
+      straordinarioMinuti:straordinarioMinuti,
+      straordinarioValore:straordinarioMinuti * tariffaMin
+    };
   }
 
   async function loadState(){
@@ -1062,16 +1062,17 @@
     var p = computePagaGiorno(el.inEntrata.value, el.inUscita.value, state.config, isSaturdayKey(state.selectedKey));
     el.paidPreview.textContent = minutesToLabel(p.paidMinutes);
     el.pagaPreview.textContent = eur(p.paga);
-    if(p.sabato && p.straordinarioMinuti > 0){
-      el.penaltyNote.textContent = "Sabato: " + minutesToLabel(p.straordinarioMinuti) + " di straordinario dopo le 13:00, senza pausa (+" + eur(p.straordinarioValore) + ")." + (p.penalizzato ? " Penalità ritardo: −" + minutesToLabel(p.penaleMinuti) + "." : "");
-    } else if(p.sabato && !p.penalizzato && !p.uscitaAnticipataMinuti){
+    var dettagliPenalita = [];
+    if(p.ritardoMinuti > 0) dettagliPenalita.push("ritardo −" + minutesToLabel(p.ritardoMinuti));
+    if(p.uscitaAnticipataMinuti > 0) dettagliPenalita.push("uscita anticipata −" + minutesToLabel(p.uscitaAnticipataMinuti));
+    if(p.straordinarioMinuti > 0){
+      el.penaltyNote.textContent = (p.sabato ? "Sabato: " : "") + minutesToLabel(p.straordinarioMinuti) + " di straordinario (+" + eur(p.straordinarioValore) + ")." + (dettagliPenalita.length ? " Decurtazioni: " + dettagliPenalita.join("; ") + "." : "");
+    } else if(p.sabato && !p.penalizzato){
       el.penaltyNote.textContent = "Sabato: 08:00–13:00 riconosciuto come giornata intera da " + eur(state.config.paga) + ".";
-    } else if(p.sabato && p.uscitaAnticipataMinuti){
-      el.penaltyNote.textContent = "Sabato con uscita prima delle 13:00: −" + minutesToLabel(p.uscitaAnticipataMinuti) + " di paga.";
+    } else if(dettagliPenalita.length){
+      el.penaltyNote.textContent = "Decurtazioni: " + dettagliPenalita.join("; ") + ". Totale −" + minutesToLabel(p.penaleMinuti) + " (−" + eur(p.penaleValore) + ").";
     } else {
-      el.penaltyNote.textContent = p.penalizzato
-        ? "Ritardo nello scaglione da −" + minutesToLabel(p.penaleMinuti) + " di paga (−" + eur(p.penaleValore) + ")"
-        : "Nessuna penalità: entrata entro la tolleranza delle " + minutesToClock(timeToMinutes(state.config.ingressoPrevisto) + state.config.tolleranzaMin) + ".";
+      el.penaltyNote.textContent = "Nessuna penalità: entrata entro la tolleranza delle " + minutesToClock(timeToMinutes(state.config.ingressoPrevisto) + state.config.tolleranzaMin) + " e uscita completa.";
     }
   }
   function updateDayTypeUI(){
@@ -1386,7 +1387,7 @@
   // ---- CSV export ----
   el.btnExportCsv.addEventListener("click", function(){
     var total = daysInMonth(state.viewYear, state.viewMonth);
-    var rows = ["Data;Giorno;Stato;Entrata;Uscita;Ore effettive;Ore retribuite;Penalita ritardo;Paga (EUR);Note"];
+    var rows = ["Data;Giorno;Stato;Entrata;Uscita;Ore effettive;Ore retribuite;Decurtazioni orarie;Paga (EUR);Note"];
     for(var d=1; d<=total; d++){
       var key = keyFor(state.viewYear, state.viewMonth, d);
       var dow = new Date(state.viewYear, state.viewMonth, d).getDay();
@@ -1424,8 +1425,7 @@
   function buildPrintReport(){
     el.printReport.innerHTML = "";
     var total = daysInMonth(state.viewYear, state.viewMonth);
-    var split = Math.ceil(total / 2);
-    var ranges = [[0, split], [split, total]];
+    var ranges = [[0, total]];
     var rows = Array.from(el.tableBody.children);
     var stats = monthStats(state.viewYear, state.viewMonth);
     var normalHead = document.querySelector(".layout table thead");
@@ -1446,7 +1446,7 @@
       heading.appendChild(month);
       var pageNumber = document.createElement("div");
       pageNumber.className = "print-page-number";
-      pageNumber.textContent = "Pagina " + (pageIndex + 1) + " di 2";
+      pageNumber.textContent = "Pagina unica";
       header.appendChild(heading);
       header.appendChild(pageNumber);
       sheet.appendChild(header);
@@ -1458,7 +1458,7 @@
           ["Giorni lavorati", String(stats.giorni), stats.ferie + " ferie · " + stats.assenze + " assenze", false],
           ["Ore effettive", minutesToLabel(stats.oreMin), "", false],
           ["Paga stimata", eur(stats.paga), "prima della busta paga", true],
-          ["Penalità ritardi", minutesToLabel(stats.penalitaMin), "totale decurtato", false]
+          ["Decurtazioni orarie", minutesToLabel(stats.penalitaMin), "totale decurtato", false]
         ].forEach(function(item){
           var stat = document.createElement("div");
           stat.className = "print-stat";
@@ -1493,10 +1493,10 @@
       table.appendChild(body);
       sheet.appendChild(table);
 
-      if(pageIndex === 1){
+      if(pageIndex === ranges.length - 1){
         var rules = document.createElement("div");
         rules.className = "print-rules";
-        rules.textContent = "Le 08:30 sono comprese nella tolleranza. Dalle 08:31 scatta −30 min; alle 09:00 −60 min; alle 09:30 −90 min e così via. Il sabato 08:00–13:00 e il sabato di ferie valgono una giornata intera; il lavoro dopo le 13:00 è straordinario alla tariffa normale, senza pausa.";
+        rules.textContent = "Entrata: le 08:30 sono comprese nella tolleranza; dalle 08:31 scatta −30 min, alle 09:00 −60 min e così via. Uscita: 16:31–16:59 −30 min; 16:01–16:30 −60 min; 15:31–16:00 −90 min. Il sabato 08:00–13:00 e il sabato di ferie valgono una giornata intera; il lavoro dopo le 13:00 è straordinario alla tariffa normale, senza pausa.";
         sheet.appendChild(rules);
       }
       el.printReport.appendChild(sheet);
