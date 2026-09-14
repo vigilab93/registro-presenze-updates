@@ -1,0 +1,56 @@
+name: Pubblica aggiornamento
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target aarch64-apple-darwin --bundles app,dmg
+          - platform: macos-latest
+            args: --target x86_64-apple-darwin --bundles app,dmg
+          - platform: windows-latest
+            args: --bundles nsis
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Configura Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+
+      - name: Configura Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Cache Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: ./src-tauri -> target
+
+      - name: Installa dipendenze
+        run: npm install
+
+      - name: Compila e pubblica
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: registro-presenze-v__VERSION__
+          releaseName: Registro Presenze v__VERSION__
+          releaseBody: Aggiornamento di Registro Presenze. I dati e i backup personali restano invariati.
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
+

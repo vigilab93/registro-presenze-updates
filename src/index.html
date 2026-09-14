@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registro Presenze</title>
+<style>
+  :root{
+    --steel-900:#1D2126;
+    --steel-800:#242830;
+    --steel-700:#2C313A;
+    --steel-line:#3A4048;
+    --steel-text:#E9E6DC;
+    --steel-text-dim:#9BA0A8;
+
+    --paper:#F3EEDF;
+    --paper-raised:#FBF8EE;
+    --paper-line:#D9CFAF;
+    --ink:#26221B;
+    --ink-soft:#726A57;
+
+    --stamp:#9B2C1E;
+    --stamp-dim:rgba(155,44,30,.10);
+    --stamp-line:rgba(155,44,30,.45);
+
+    --radius:10px;
+    --font-ui:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--steel-900);
+    color:var(--ink);
+    font-family:var(--font-ui);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important; animation:none !important;}
+  }
+  @media print{
+    @page{size:A4 landscape;margin:12mm;}
+    body{background:#fff;}
+    .app{max-width:none;padding:0;}
+    .topbar{color:var(--ink);padding:0 0 16px;}
+    .clock-readout{color:var(--ink);}
+    .topbar-actions,.layout > section:not(.full),footer.note,#btnExportCsv{display:none !important;}
+    .layout{display:block;}
+    .panel{box-shadow:none;border:1px solid var(--paper-line);margin-bottom:14px;break-inside:avoid;}
+    table{font-size:10px;}
+    .toast,.modal-overlay{display:none !important;}
+  }
+
+  .app{max-width:1040px;margin:0 auto;padding:28px 20px 60px;}
+
+  /* Top bar (steel) */
+  .topbar{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    color:var(--steel-text);
+    padding:4px 6px 22px;
+    flex-wrap:wrap;gap:14px;
+  }
+  .brand-block h1{
+    margin:0 0 6px;
+    font-size:20px;
+    font-weight:650;
+    letter-spacing:.2px;
+  }
+  .clock-readout{
+    font-family:var(--font-mono);
+    font-variant-numeric:tabular-nums;
+    font-size:22px;
+    letter-spacing:1.5px;
+    color:var(--steel-text);
+  }
+  .clock-readout .dow{color:#D6A793;}
+
+  .topbar-actions{display:flex;gap:10px;}
+  .saved-indicator{display:flex;align-items:center;gap:6px;color:#9FD0AF;font-size:11.5px;padding:0 4px;white-space:nowrap;}
+  .saved-indicator::before{content:"";width:7px;height:7px;border-radius:50%;background:#55B878;box-shadow:0 0 0 3px rgba(85,184,120,.13);}
+  .btn-steel{
+    background:var(--steel-700);
+    border:1px solid var(--steel-line);
+    color:var(--steel-text);
+    padding:8px 14px;
+    border-radius:8px;
+    font-size:13px;
+    font-family:var(--font-ui);
+    cursor:pointer;
+  }
+  .btn-steel:hover{background:var(--steel-800);}
+
+  /* Layout grid */
+  .layout{
+    display:grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap:16px;
+  }
+  .full{grid-column:1 / -1;}
+  @media (max-width:760px){
+    .layout{grid-template-columns:1fr;}
+  }
+
+  .panel{
+    background:var(--paper);
+    border-radius:var(--radius);
+    padding:20px 22px;
+    box-shadow:0 10px 24px rgba(0,0,0,.28);
+  }
+  .panel h2{
+    margin:0 0 16px;
+    font-size:13px;
+    font-weight:650;
+    color:var(--ink-soft);
+    border-bottom:1px solid var(--paper-line);
+    padding-bottom:10px;
+  }
+
+  /* Entry panel */
+  .entry-heading{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .entry-heading .back-today{
+    font-size:12px;color:var(--stamp);cursor:pointer;background:none;border:none;
+    font-family:var(--font-ui);padding:0;text-decoration:underline;
+  }
+  .field-row{display:flex;gap:14px;margin:14px 0;flex-wrap:wrap;}
+  .field{flex:1;min-width:130px;}
+  .field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:6px;}
+  .field input[type=time]{
+    width:100%;
+    font-family:var(--font-mono);
+    font-size:20px;
+    padding:9px 10px;
+    border-radius:7px;
+    border:1px solid var(--paper-line);
+    background:var(--paper-raised);
+    color:var(--ink);
+  }
+  .field input[type=time]:focus-visible{outline:2px solid var(--stamp);outline-offset:1px;}
+  .stamp-btn{
+    margin-top:8px;
+    width:100%;
+    padding:7px 0;
+    border-radius:7px;
+    border:1.5px dashed var(--stamp-line);
+    background:var(--stamp-dim);
+    color:var(--stamp);
+    font-family:var(--font-ui);
+    font-weight:600;
+    font-size:12px;
+    cursor:pointer;
+    letter-spacing:.3px;
+  }
+  .stamp-btn:hover{background:rgba(155,44,30,.16);}
+  .day-type{margin:15px 0 2px;}
+  .day-type label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:6px;}
+  .day-type select{display:none;}
+  .type-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .type-btn{padding:10px 8px;border-radius:8px;border:1px solid var(--paper-line);background:var(--paper-raised);color:var(--ink-soft);font:650 13px var(--font-ui);cursor:pointer;}
+  .type-btn:hover{border-color:var(--stamp-line);}
+  .type-btn.active[data-type="lavoro"]{background:var(--ink);border-color:var(--ink);color:var(--paper);}
+  .type-btn.active[data-type="ferie"]{background:#397B50;border-color:#397B50;color:#fff;}
+  .type-btn.active[data-type="assenza"]{background:#77736A;border-color:#77736A;color:#fff;}
+  .field-row.is-disabled{opacity:.42;pointer-events:none;}
+
+  .worked-preview{
+    margin:16px 0 6px;
+    font-size:14px;
+    color:var(--ink-soft);
+  }
+  .worked-preview b{color:var(--ink);font-family:var(--font-mono);font-size:16px;}
+
+  .entry-error{
+    color:var(--stamp);
+    font-size:12.5px;
+    margin:6px 0 0;
+    min-height:16px;
+  }
+  .entry-note{
+    font-size:12.5px;
+    color:var(--stamp);
+    min-height:16px;
+  }
+  .entry-hint{font-size:11.5px;color:var(--ink-soft);margin:-5px 0 12px;line-height:1.45;}
+  .modal-subhead{
+    font-size:12px;font-weight:650;color:var(--ink-soft);
+    border-bottom:1px solid var(--paper-line);
+    padding-bottom:6px;margin:18px 0 12px;
+  }
+  .modal-subhead:first-of-type{margin-top:0;}
+
+  .entry-actions{display:flex;gap:10px;margin-top:14px;}
+  .note-toggle-row{margin-top:15px;padding-top:14px;border-top:1px solid var(--paper-line);}
+  .note-toggle-row .btn-ghost{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .note-badge{display:none;background:var(--stamp);color:#fff;border-radius:10px;padding:2px 7px;font-size:9px;font-weight:700;letter-spacing:.4px;}
+  .note-badge.visible{display:inline-block;}
+  .day-note-box{margin-top:10px;padding:14px;background:var(--paper-raised);border:1px solid var(--paper-line);border-radius:8px;}
+  .day-note-box.hidden{display:none;}
+  .day-note-box label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:7px;}
+  .day-note-box textarea{width:100%;min-height:105px;resize:vertical;padding:10px;border:1px solid var(--paper-line);border-radius:7px;background:#fffdf6;color:var(--ink);font:13px/1.5 var(--font-ui);}
+  .day-note-box textarea:focus-visible{outline:2px solid var(--stamp);outline-offset:1px;}
+  .day-note-actions{display:flex;justify-content:flex-end;margin-top:9px;}
+  .btn-primary{
+    background:var(--ink);color:var(--paper);
+    border:none;padding:10px 18px;border-radius:7px;
+    font-family:var(--font-ui);font-size:13px;font-weight:600;cursor:pointer;
+  }
+  .btn-primary:hover{opacity:.88;}
+  .btn-ghost{
+    background:none;border:1px solid var(--paper-line);color:var(--ink-soft);
+    padding:10px 16px;border-radius:7px;font-family:var(--font-ui);font-size:13px;cursor:pointer;
+  }
+  .btn-ghost:hover{border-color:var(--stamp-line);color:var(--stamp);}
+
+  /* Calendar */
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .cal-head .month-label{font-size:13px;font-weight:650;color:var(--ink-soft);}
+  .cal-nav{display:flex;gap:6px;}
+  .cal-nav button{
+    background:var(--paper-raised);border:1px solid var(--paper-line);
+    width:26px;height:26px;border-radius:6px;cursor:pointer;color:var(--ink);font-size:14px;
+  }
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+  .cal-dow{text-align:center;font-size:11px;color:var(--ink-soft);padding-bottom:4px;}
+  .cal-cell{
+    aspect-ratio:1;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    border-radius:7px;
+    font-family:var(--font-mono);
+    font-size:13px;
+    background:var(--paper-raised);
+    border:1px solid transparent;
+    cursor:pointer;
+    color:var(--ink);
+    position:relative;
+  }
+  .cal-cell.empty{background:none;cursor:default;}
+  .cal-cell.weekend{color:var(--ink-soft);}
+  .cal-cell.is-today{border-color:var(--stamp);}
+  .cal-cell.is-selected{background:var(--ink);color:var(--paper);}
+  .cal-cell .dot{
+    width:5px;height:5px;border-radius:50%;background:var(--stamp);
+    position:absolute;bottom:5px;
+  }
+  .cal-cell .dot.incomplete{background:#D18B28;}
+  .cal-cell .dot.ferie{background:#397B50;}
+  .cal-cell .dot.assenza{background:#77736A;}
+  .cal-cell .note-mark{position:absolute;top:3px;right:4px;font-size:9px;color:#4C6C94;line-height:1;}
+  .cal-cell.is-selected .dot{background:var(--paper);}
+
+  /* Summary */
+  .summary-grid{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
+  }
+  @media (max-width:700px){.summary-grid{grid-template-columns:repeat(2,1fr);}}
+  .stat{
+    background:var(--paper-raised);
+    border:1px solid var(--paper-line);
+    border-radius:8px;
+    padding:14px 14px;
+  }
+  .stat .label{font-size:11.5px;color:var(--ink-soft);margin-bottom:6px;}
+  .stat .value{font-family:var(--font-mono);font-size:20px;font-weight:600;color:var(--ink);}
+  .stat.accent .value{color:var(--stamp);}
+  .stat .sub{font-size:11px;color:var(--ink-soft);margin-top:4px;}
+
+  /* Table */
+  .table-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;border-bottom:1px solid var(--paper-line);padding-bottom:10px;}
+  .table-head h2{border:none;padding:0;margin:0;}
+  table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:13px;}
+  thead th{
+    text-align:left;font-family:var(--font-ui);font-size:11.5px;color:var(--ink-soft);
+    font-weight:600;padding:6px 8px;border-bottom:1px solid var(--paper-line);
+  }
+  tbody td{padding:6px 8px;border-bottom:1px solid rgba(217,207,175,.5);}
+  tbody tr.weekend td{color:var(--ink-soft);}
+  tbody tr.today-row td{background:var(--stamp-dim);}
+  tbody tr.ferie-row td{background:rgba(57,123,80,.08);}
+  tbody tr.assenza-row td{background:rgba(80,80,80,.06);}
+  tbody tr.worked td.paga{color:var(--stamp);font-weight:600;}
+  .status-ferie{color:#397B50;font-weight:700;}
+  .status-assenza{color:#77736A;font-weight:700;}
+  td.note-cell{max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink-soft);font-family:var(--font-ui);font-size:11.5px;}
+  .dash{color:var(--paper-line);}
+
+  /* Modal */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.55);
+    display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;
+  }
+  .modal-overlay.hidden{display:none;}
+  .modal{
+    background:var(--paper);border-radius:var(--radius);padding:24px;max-width:440px;width:100%;
+    box-shadow:0 20px 50px rgba(0,0,0,.4);
+    max-height:86vh;overflow-y:auto;
+  }
+  .modal h3{margin:0 0 16px;font-size:15px;color:var(--ink);}
+  .modal .field{margin-bottom:14px;}
+  .modal input[type=number],.modal input[type=text]{
+    width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--paper-line);
+    font-family:var(--font-mono);font-size:15px;background:var(--paper-raised);color:var(--ink);
+  }
+  .modal-actions{display:flex;justify-content:space-between;margin-top:18px;flex-wrap:wrap;gap:8px;}
+  .backup-row{display:flex;gap:8px;margin-top:16px;border-top:1px solid var(--paper-line);padding-top:16px;}
+  .update-card{background:var(--paper-raised);border:1px solid var(--paper-line);border-radius:8px;padding:13px;}
+  .update-card p{margin:0 0 10px;color:var(--ink-soft);font-size:12px;line-height:1.5;}
+  .update-card .btn-ghost{width:100%;}
+  .update-version{font-family:var(--font-mono);font-weight:650;color:var(--ink);}
+  .update-notes{white-space:pre-wrap;max-height:170px;overflow-y:auto;background:var(--paper-raised);border:1px solid var(--paper-line);border-radius:7px;padding:11px;color:var(--ink-soft);font-size:12.5px;line-height:1.5;margin:12px 0;}
+  .update-progress{display:none;height:6px;background:var(--paper-line);border-radius:5px;overflow:hidden;margin:14px 0 5px;}
+  .update-progress.visible{display:block;}
+  .update-progress::after{content:"";display:block;width:38%;height:100%;background:var(--stamp);border-radius:5px;animation:update-loading 1.1s ease-in-out infinite alternate;}
+  @keyframes update-loading{from{transform:translateX(-20%);}to{transform:translateX(185%);}}
+  button:disabled{opacity:.55;cursor:not-allowed;}
+
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:var(--paper);padding:10px 20px;border-radius:20px;
+    font-size:13px;box-shadow:0 8px 20px rgba(0,0,0,.35);z-index:60;
+  }
+  .toast.hidden{display:none;}
+
+  footer.note{
+    color:var(--steel-text-dim);font-size:11.5px;text-align:center;margin-top:26px;line-height:1.6;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand-block">
+      <h1 id="appTitle">Registro Presenze</h1>
+      <div class="clock-readout" id="clockReadout"></div>
+    </div>
+    <div class="topbar-actions">
+      <span class="saved-indicator" id="savedIndicator">Archivio protetto · salvataggio automatico</span>
+      <button class="btn-steel" id="btnQuickBackup">Scarica backup</button>
+      <button class="btn-steel" id="btnPrint">Stampa / Salva PDF</button>
+      <button class="btn-steel" id="btnSettings">Impostazioni</button>
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <!-- ENTRY PANEL -->
+    <section class="panel">
+      <div class="entry-heading">
+        <h2 id="entryTitle" style="border:none;padding:0;margin:0;">Oggi</h2>
+        <button class="back-today hidden" id="btnBackToday">torna a oggi</button>
+      </div>
+
+      <div class="day-type">
+        <label>Tipo di giornata</label>
+        <div class="type-buttons">
+          <button type="button" class="type-btn" id="btnTipoLavoro" data-type="lavoro">Lavoro</button>
+          <button type="button" class="type-btn" id="btnTipoFerie" data-type="ferie">Ferie</button>
+          <button type="button" class="type-btn" id="btnTipoAssenza" data-type="assenza">Assenza</button>
+        </div>
+        <select id="inTipo">
+          <option value="lavoro">Lavoro</option>
+          <option value="ferie">Ferie — giornata pagata interamente</option>
+          <option value="assenza">Assenza — giornata non pagata</option>
+        </select>
+      </div>
+
+      <div class="field-row" id="workTimeFields">
+        <div class="field">
+          <label for="inEntrata">Entrata</label>
+          <input type="time" id="inEntrata">
+          <button class="stamp-btn" id="btnTimbraEntrata">Salva entrata</button>
+        </div>
+        <div class="field">
+          <label for="inUscita">Uscita</label>
+          <input type="time" id="inUscita">
+          <button class="stamp-btn" id="btnTimbraUscita">Salva uscita</button>
+        </div>
+      </div>
+
+      <div class="entry-hint">Inserisci l’orario reale del cartellino, anche se è precedente all’ora attuale. Se lasci il campo vuoto, “Salva entrata/uscita” userà l’ora del Mac.</div>
+      <div class="worked-preview">Ore effettive (pausa esclusa): <b id="workedPreview">—</b></div>
+      <div class="worked-preview">Ore retribuite: <b id="paidPreview">—</b></div>
+      <div class="worked-preview">Paga di oggi: <b id="pagaPreview">—</b></div>
+      <div class="entry-note" id="penaltyNote"></div>
+      <div class="entry-error" id="entryError"></div>
+
+      <div class="note-toggle-row">
+        <button class="btn-ghost" id="btnToggleNote">📝 Note del giorno <span class="note-badge" id="noteBadge">PRESENTE</span></button>
+      </div>
+      <div class="day-note-box hidden" id="dayNoteBox">
+        <label for="dayNote">Scrivi qui ciò che vuoi ricordare di questa giornata</label>
+        <textarea id="dayNote" maxlength="2000" placeholder="Esempio: riunione, problema accaduto, comunicazione ricevuta…"></textarea>
+        <div class="day-note-actions">
+          <button class="btn-primary" id="btnSaveCloseNote">Salva e chiudi</button>
+        </div>
+      </div>
+
+      <div class="entry-actions">
+        <button class="btn-primary" id="btnSalva">Salva giorno</button>
+        <button class="btn-ghost" id="btnElimina">Cancella giorno</button>
+      </div>
+    </section>
+
+    <!-- CALENDAR PANEL -->
+    <section class="panel">
+      <div class="cal-head">
+        <span class="month-label" id="calMonthLabel">—</span>
+        <div class="cal-nav">
+          <button id="calPrev">‹</button>
+          <button id="calNext">›</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="calDow"></div>
+      <div class="cal-grid" id="calGrid" style="margin-top:5px;"></div>
+    </section>
+
+    <!-- SUMMARY -->
+    <section class="panel full">
+      <h2>Riepilogo del mese</h2>
+      <div class="summary-grid">
+        <div class="stat">
+          <div class="label">Giorni lavorati</div>
+          <div class="value" id="statGiorni">0</div>
+          <div class="sub" id="statGiorniSub">0 ferie · 0 assenze</div>
+        </div>
+        <div class="stat">
+          <div class="label">Ore effettive</div>
+          <div class="value" id="statOre">0h 00m</div>
+        </div>
+        <div class="stat accent">
+          <div class="label">Paga stimata</div>
+          <div class="value" id="statPaga">€0</div>
+          <div class="sub">prima della busta paga</div>
+        </div>
+        <div class="stat">
+          <div class="label">Penalità ritardi</div>
+          <div class="value" id="statPenalita">0h 00m</div>
+          <div class="sub">totale decurtato</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TABLE -->
+    <section class="panel full">
+      <div class="table-head">
+        <h2>Tabulato mensile</h2>
+        <button class="btn-ghost" id="btnExportCsv">Esporta CSV</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th><th>Giorno</th><th>Stato</th><th>Entrata</th><th>Uscita</th><th>Ore effettive</th><th>Ore pagate</th><th>Penalità</th><th class="paga">Paga</th><th>Note</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div style="font-size:11.5px;color:var(--ink-soft);margin-top:10px;">Le 08:30 sono comprese nella tolleranza. Dalle 08:31 scatta −30 min; alle 09:00 −60 min; alle 09:30 −90 min e così via.</div>
+      <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Il sabato 08:00–13:00 e il sabato di ferie valgono una giornata intera. Il lavoro dopo le 13:00 è straordinario pagato alla tariffa normale, senza pausa.</div>
+    </section>
+
+  </div>
+
+  <footer class="note">
+    I dati vengono salvati automaticamente sul computer, nel database protetto e nei backup giornalieri.
+  </footer>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay hidden" id="settingsOverlay">
+  <div class="modal">
+    <h3>Impostazioni</h3>
+
+    <div class="modal-subhead">Personalizzazione</div>
+    <div class="field">
+      <label for="cfgNomeApp">Nome dell’app</label>
+      <input type="text" id="cfgNomeApp" maxlength="60" placeholder="Registro Presenze">
+    </div>
+
+    <div class="modal-subhead">Paga</div>
+    <div class="field">
+      <label for="cfgPaga">Paga per giornata piena, orario rispettato (€)</label>
+      <input type="number" id="cfgPaga" min="0" step="1">
+    </div>
+    <div class="modal-subhead">Orario previsto</div>
+    <div class="field-row">
+      <div class="field">
+        <label for="cfgIngresso">Ingresso previsto</label>
+        <input type="time" id="cfgIngresso">
+      </div>
+      <div class="field">
+        <label for="cfgFineMattina">Fine mattina</label>
+        <input type="time" id="cfgFineMattina">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="cfgInizioPomeriggio">Inizio pomeriggio</label>
+        <input type="time" id="cfgInizioPomeriggio">
+      </div>
+      <div class="field">
+        <label for="cfgUscitaPrevista">Uscita prevista</label>
+        <input type="time" id="cfgUscitaPrevista">
+      </div>
+    </div>
+    <div class="field">
+      <label for="cfgPausa">Pausa pranzo, per il calcolo delle ore (minuti)</label>
+      <input type="number" id="cfgPausa" min="0" step="5">
+    </div>
+
+    <div class="modal-subhead">Tolleranza ingresso</div>
+    <div class="field-row">
+      <div class="field">
+        <label for="cfgTolleranza">Tolleranza (minuti dopo l'ingresso previsto)</label>
+        <input type="number" id="cfgTolleranza" min="0" step="5">
+      </div>
+      <div class="field">
+        <label for="cfgPenale">Durata di ogni scaglione (minuti)</label>
+        <input type="number" id="cfgPenale" min="0" step="5">
+      </div>
+    </div>
+    <div style="font-size:11.5px;color:var(--ink-soft);line-height:1.5;">Ogni nuovo scaglione sottrae altri 30 minuti di paga: 08:31–08:59 = −30 min, 09:00–09:29 = −60 min, 09:30–09:59 = −90 min.</div>
+
+    <div class="modal-subhead">Aggiornamenti</div>
+    <div class="update-card">
+      <p id="updateStateText">Versione installata: <span class="update-version">1.1.0</span></p>
+      <button class="btn-ghost" id="btnCheckUpdates">Controlla aggiornamenti</button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-ghost" id="btnCloseSettings">Annulla</button>
+      <button class="btn-primary" id="btnSaveSettings">Salva impostazioni</button>
+    </div>
+    <div class="backup-row">
+      <button class="btn-ghost" id="btnExportBackup">Esporta backup (JSON)</button>
+      <button class="btn-ghost" id="btnImportBackup">Importa backup</button>
+      <input type="file" id="fileImport" accept="application/json" style="display:none;">
+    </div>
+    <div class="backup-row" style="border-top:none;padding-top:0;">
+      <button class="btn-ghost" id="btnResetAll" style="color:var(--stamp);border-color:var(--stamp-line);">Cancella tutti i dati</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPDATE MODAL -->
+<div class="modal-overlay hidden" id="updateOverlay">
+  <div class="modal">
+    <h3>Aggiornamento disponibile</h3>
+    <div style="font-size:13px;color:var(--ink);">È disponibile Registro Presenze <b class="update-version" id="availableVersion"></b>.</div>
+    <div class="update-notes" id="updateNotes">Miglioramenti e correzioni.</div>
+    <div class="update-progress" id="updateProgress"></div>
+    <div style="font-size:11.5px;color:var(--ink-soft);line-height:1.5;" id="updateProgressText">I dati e i backup resteranno invariati.</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="btnUpdateLater">Più tardi</button>
+      <button class="btn-primary" id="btnInstallUpdate">Scarica e installa</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast hidden" id="toast"></div>
+
+<script>
+(async function(){
+  "use strict";
+
+  var MESI = ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+  var GIORNI = ["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"]; // Date.getDay() index
+  var GIORNI_BREVI = ["L","M","M","G","V","S","D"]; // header, Monday-first
+  var LS_ENTRIES = "registroOrari.entries";
+  var LS_CONFIG = "registroOrari.config";
+  var APP_VERSION = "1.1.0";
+  var nativeInvoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke
+    ? window.__TAURI__.core.invoke
+    : null;
+  var nativeSaveQueue = Promise.resolve();
+
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  function keyFor(y,m,d){ return y + "-" + pad(m+1) + "-" + pad(d); }
+  function todayObj(){ var t = new Date(); return { y:t.getFullYear(), m:t.getMonth(), d:t.getDate() }; }
+  function todayKey(){ var t = todayObj(); return keyFor(t.y,t.m,t.d); }
+  function daysInMonth(y,m){ return new Date(y, m+1, 0).getDate(); }
+  function isSaturdayKey(key){
+    var p = key.split("-");
+    return new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10)).getDay() === 6;
+  }
+
+  function timeToMinutes(t){
+    if(!t) return null;
+    var parts = t.split(":");
+    return (parseInt(parts[0],10) * 60) + parseInt(parts[1],10);
+  }
+  function minutesToLabel(min){
+    if(min === null || min === undefined) return "—";
+    var h = Math.floor(min/60), m = min % 60;
+    return h + "h " + pad(m) + "m";
+  }
+  function breakOverlapMinutes(startMin, endMin, cfg){
+    var pausaInizio = timeToMinutes(cfg.fineMattina);
+    var pausaFine = timeToMinutes(cfg.inizioPomeriggio);
+    if(pausaInizio === null || pausaFine === null || pausaFine <= pausaInizio) return 0;
+    var overlapStart = Math.max(startMin, pausaInizio);
+    var overlapEnd = Math.min(endMin, pausaFine);
+    var overlap = Math.max(0, overlapEnd - overlapStart);
+    var pausaConfigurata = Math.max(0, Number(cfg.pausa));
+    return Math.min(overlap, isNaN(pausaConfigurata) ? overlap : pausaConfigurata);
+  }
+  function computeWorkedMinutes(entrata, uscita, cfg, isSaturday){
+    if(!entrata || !uscita) return null;
+    var a = timeToMinutes(entrata), b = timeToMinutes(uscita);
+    var diff = b - a;
+    if(diff <= 0) return null;
+    // Il sabato non viene sottratta la pausa 13:00–13:30,
+    // neppure quando si prosegue con lo straordinario.
+    if(!isSaturday) diff -= breakOverlapMinutes(a, b, cfg);
+    return diff > 0 ? diff : 0;
+  }
+  function nowHHMM(){
+    var t = new Date();
+    return pad(t.getHours()) + ":" + pad(t.getMinutes());
+  }
+  function eur(n){
+    return new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", minimumFractionDigits:2 }).format(Number(n) || 0);
+  }
+  function csvEscape(value){
+    var s = String(value == null ? "" : value);
+    return /[;"\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  // ---- State ----
+  var state = {
+    entries: {},
+    config: {
+      nomeApp: "Registro Presenze", pausa: 30, paga: 50,
+      ingressoPrevisto: "08:15", tolleranzaMin: 15, penaleMin: 30,
+      fineMattina: "13:00", inizioPomeriggio: "13:30", uscitaPrevista: "17:00"
+    },
+    viewYear: todayObj().y,
+    viewMonth: todayObj().m,
+    selectedKey: todayKey()
+  };
+
+  function standardMinutesOf(cfg){
+    var mattina = timeToMinutes(cfg.fineMattina) - timeToMinutes(cfg.ingressoPrevisto);
+    var pomeriggio = timeToMinutes(cfg.uscitaPrevista) - timeToMinutes(cfg.inizioPomeriggio);
+    var tot = (mattina > 0 ? mattina : 0) + (pomeriggio > 0 ? pomeriggio : 0);
+    return tot > 0 ? tot : 495;
+  }
+
+  // Calcolo retribuzione: entro la tolleranza l'inizio pagato resta 08:15.
+  // Dopo le 08:30 si perdono 30 minuti a scaglioni: 08:31=-30, 09:00=-60, 09:30=-90.
+  function computePagaGiorno(entrata, uscita, cfg, isSaturday){
+    var min = computeWorkedMinutes(entrata, uscita, cfg, isSaturday);
+    if(min === null) return { worked:false, paga:0, penalizzato:false, penaleValore:0, penaleMinuti:0, paidMinutes:0 };
+    var standardMin = standardMinutesOf(cfg);
+    var tariffaMin = standardMin > 0 ? cfg.paga / standardMin : 0;
+    var soglia = timeToMinutes(cfg.ingressoPrevisto) + cfg.tolleranzaMin;
+    var arrivo = timeToMinutes(entrata);
+    var scaglione = Math.max(1, Number(cfg.penaleMin) || 30);
+    var penaleMinuti = arrivo > soglia ? (Math.floor((arrivo - soglia) / scaglione) + 1) * scaglione : 0;
+    var penalizzato = penaleMinuti > 0;
+    if(isSaturday){
+      var fineSabato = timeToMinutes(cfg.fineMattina); // 13:00
+      var uscitaSabato = timeToMinutes(uscita);
+      var uscitaAnticipata = Math.max(0, fineSabato - uscitaSabato);
+      var straordinarioMinuti = Math.max(0, uscitaSabato - fineSabato);
+      var paidSaturday = Math.max(0, standardMin - penaleMinuti - uscitaAnticipata + straordinarioMinuti);
+      return {
+        worked:true,
+        paga:paidSaturday * tariffaMin,
+        penalizzato:penalizzato,
+        penaleValore:penaleMinuti * tariffaMin,
+        penaleMinuti:penaleMinuti,
+        paidMinutes:paidSaturday,
+        actualMinutes:min,
+        sabato:true,
+        uscitaAnticipataMinuti:uscitaAnticipata,
+        straordinarioMinuti:straordinarioMinuti,
+        straordinarioValore:straordinarioMinuti * tariffaMin
+      };
+    }
+    var inizioPagato = timeToMinutes(cfg.ingressoPrevisto) + penaleMinuti;
+    var fine = timeToMinutes(uscita);
+    var paidMinutes = Math.max(0, fine - inizioPagato - breakOverlapMinutes(inizioPagato, fine, cfg));
+    var paga = paidMinutes * tariffaMin;
+    var pagaPienaAlleStesseOre = Math.max(0, fine - timeToMinutes(cfg.ingressoPrevisto) - breakOverlapMinutes(timeToMinutes(cfg.ingressoPrevisto), fine, cfg)) * tariffaMin;
+    var penaleValore = Math.max(0, pagaPienaAlleStesseOre - paga);
+    return { worked:true, paga:paga, penalizzato:penalizzato, penaleValore:penaleValore, penaleMinuti:penaleMinuti, paidMinutes:paidMinutes, actualMinutes:min };
+  }
+
+  async function loadState(){
+    if(nativeInvoke){
+      try{
+        var data = await nativeInvoke("load_app_data");
+        state.entries = data.entries || {};
+        state.config = Object.assign(state.config, data.config || {});
+        return;
+      }catch(err){
+        console.error("Errore caricamento archivio dell'app", err);
+      }
+    }
+    try{
+      var e = localStorage.getItem(LS_ENTRIES);
+      if(e) state.entries = JSON.parse(e);
+    }catch(err){ console.error("Errore lettura dati", err); }
+    try{
+      var c = localStorage.getItem(LS_CONFIG);
+      if(c) state.config = Object.assign(state.config, JSON.parse(c));
+    }catch(err){ console.error("Errore lettura impostazioni", err); }
+  }
+  function persistNativeState(){
+    if(!nativeInvoke) return;
+    var snapshot = JSON.parse(JSON.stringify({
+      schemaVersion: 1,
+      entries: state.entries,
+      config: state.config
+    }));
+    nativeSaveQueue = nativeSaveQueue
+      .catch(function(){})
+      .then(function(){ return nativeInvoke("save_app_data", { data:snapshot }); })
+      .then(function(result){
+        if(result.warning){
+          el.savedIndicator.textContent = "Dati salvati · attenzione al backup";
+          el.savedIndicator.style.color = "#D18B28";
+          showToast(result.warning);
+        } else {
+          el.savedIndicator.textContent = "Archivio e backup aggiornati";
+          el.savedIndicator.style.color = "";
+        }
+      })
+      .catch(function(err){
+        el.savedIndicator.textContent = "Errore di salvataggio";
+        el.savedIndicator.style.color = "#D33";
+        showToast("ERRORE: i dati non sono stati salvati. " + err);
+      });
+  }
+  function saveEntries(){
+    if(nativeInvoke) persistNativeState();
+    else localStorage.setItem(LS_ENTRIES, JSON.stringify(state.entries));
+  }
+  function saveConfig(){
+    if(nativeInvoke) persistNativeState();
+    else localStorage.setItem(LS_CONFIG, JSON.stringify(state.config));
+  }
+
+  function downloadTextFile(fileName, contents, mimeType, successMessage){
+    if(nativeInvoke){
+      nativeInvoke("save_export_file", { fileName:fileName, contents:contents })
+        .then(function(path){ showToast((successMessage || "File esportato") + " in Documenti/Registro Presenze"); })
+        .catch(function(err){ showToast("Esportazione non riuscita: " + err); });
+      return;
+    }
+    var blob = new Blob([contents], { type:mimeType });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(successMessage || "File esportato");
+  }
+
+  // ---- DOM refs ----
+  var el = {
+    appTitle: document.getElementById("appTitle"),
+    savedIndicator: document.getElementById("savedIndicator"),
+    clock: document.getElementById("clockReadout"),
+    entryTitle: document.getElementById("entryTitle"),
+    backToday: document.getElementById("btnBackToday"),
+    inTipo: document.getElementById("inTipo"),
+    btnTipoLavoro: document.getElementById("btnTipoLavoro"),
+    btnTipoFerie: document.getElementById("btnTipoFerie"),
+    btnTipoAssenza: document.getElementById("btnTipoAssenza"),
+    workTimeFields: document.getElementById("workTimeFields"),
+    inEntrata: document.getElementById("inEntrata"),
+    inUscita: document.getElementById("inUscita"),
+    btnTimbraEntrata: document.getElementById("btnTimbraEntrata"),
+    btnTimbraUscita: document.getElementById("btnTimbraUscita"),
+    workedPreview: document.getElementById("workedPreview"),
+    paidPreview: document.getElementById("paidPreview"),
+    pagaPreview: document.getElementById("pagaPreview"),
+    penaltyNote: document.getElementById("penaltyNote"),
+    entryError: document.getElementById("entryError"),
+    btnSalva: document.getElementById("btnSalva"),
+    btnElimina: document.getElementById("btnElimina"),
+    btnToggleNote: document.getElementById("btnToggleNote"),
+    noteBadge: document.getElementById("noteBadge"),
+    dayNoteBox: document.getElementById("dayNoteBox"),
+    dayNote: document.getElementById("dayNote"),
+    btnSaveCloseNote: document.getElementById("btnSaveCloseNote"),
+    calMonthLabel: document.getElementById("calMonthLabel"),
+    calPrev: document.getElementById("calPrev"),
+    calNext: document.getElementById("calNext"),
+    calDow: document.getElementById("calDow"),
+    calGrid: document.getElementById("calGrid"),
+    statGiorni: document.getElementById("statGiorni"),
+    statGiorniSub: document.getElementById("statGiorniSub"),
+    statOre: document.getElementById("statOre"),
+    statPaga: document.getElementById("statPaga"),
+    statPenalita: document.getElementById("statPenalita"),
+    tableBody: document.getElementById("tableBody"),
+    btnExportCsv: document.getElementById("btnExportCsv"),
+    btnQuickBackup: document.getElementById("btnQuickBackup"),
+    btnPrint: document.getElementById("btnPrint"),
+    btnSettings: document.getElementById("btnSettings"),
+    settingsOverlay: document.getElementById("settingsOverlay"),
+    btnCloseSettings: document.getElementById("btnCloseSettings"),
+    btnSaveSettings: document.getElementById("btnSaveSettings"),
+    cfgNomeApp: document.getElementById("cfgNomeApp"),
+    cfgPausa: document.getElementById("cfgPausa"),
+    cfgPaga: document.getElementById("cfgPaga"),
+    cfgIngresso: document.getElementById("cfgIngresso"),
+    cfgFineMattina: document.getElementById("cfgFineMattina"),
+    cfgInizioPomeriggio: document.getElementById("cfgInizioPomeriggio"),
+    cfgUscitaPrevista: document.getElementById("cfgUscitaPrevista"),
+    cfgTolleranza: document.getElementById("cfgTolleranza"),
+    cfgPenale: document.getElementById("cfgPenale"),
+    btnExportBackup: document.getElementById("btnExportBackup"),
+    btnImportBackup: document.getElementById("btnImportBackup"),
+    fileImport: document.getElementById("fileImport"),
+    btnResetAll: document.getElementById("btnResetAll"),
+    btnCheckUpdates: document.getElementById("btnCheckUpdates"),
+    updateStateText: document.getElementById("updateStateText"),
+    updateOverlay: document.getElementById("updateOverlay"),
+    availableVersion: document.getElementById("availableVersion"),
+    updateNotes: document.getElementById("updateNotes"),
+    updateProgress: document.getElementById("updateProgress"),
+    updateProgressText: document.getElementById("updateProgressText"),
+    btnUpdateLater: document.getElementById("btnUpdateLater"),
+    btnInstallUpdate: document.getElementById("btnInstallUpdate"),
+    toast: document.getElementById("toast")
+  };
+
+  function showToast(msg){
+    el.toast.textContent = msg;
+    el.toast.classList.remove("hidden");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function(){ el.toast.classList.add("hidden"); }, 2200);
+  }
+
+  // ---- Clock readout ----
+  function renderClock(){
+    var t = new Date();
+    var dow = cap(GIORNI[t.getDay()]);
+    el.clock.innerHTML = '<span class="dow">' + dow + '</span> ' + t.getDate() + " " + MESI[t.getMonth()] + " " + t.getFullYear();
+  }
+
+  function renderBrand(){
+    var nome = (state.config.nomeApp || "Registro Presenze").trim();
+    el.appTitle.textContent = nome;
+    document.title = nome;
+  }
+
+  // ---- Entry panel ----
+  function renderEntryPanel(){
+    var isToday = state.selectedKey === todayKey();
+    if(isToday){
+      el.entryTitle.textContent = "Oggi";
+      el.backToday.classList.add("hidden");
+      el.btnTimbraEntrata.style.display = "";
+      el.btnTimbraUscita.style.display = "";
+    } else {
+      var parts = state.selectedKey.split("-");
+      var y = parseInt(parts[0],10), m = parseInt(parts[1],10)-1, d = parseInt(parts[2],10);
+      var dow = cap(GIORNI[new Date(y,m,d).getDay()]);
+      el.entryTitle.textContent = dow + " " + d + " " + MESI[m] + " " + y;
+      el.backToday.classList.remove("hidden");
+      el.btnTimbraEntrata.style.display = "none";
+      el.btnTimbraUscita.style.display = "none";
+    }
+    var entry = state.entries[state.selectedKey] || {};
+    el.inTipo.value = entry.tipo || "lavoro";
+    el.inEntrata.value = entry.entrata || "";
+    el.inUscita.value = entry.uscita || "";
+    el.dayNote.value = entry.nota || "";
+    el.dayNoteBox.classList.add("hidden");
+    updateNoteUI(entry.nota || "");
+    updateDayTypeUI();
+    el.entryError.textContent = "";
+    el.btnElimina.style.visibility = state.entries[state.selectedKey] ? "visible" : "hidden";
+    updateWorkedPreview();
+  }
+
+  function updateNoteUI(note){
+    el.noteBadge.classList.toggle("visible", Boolean((note || "").trim()));
+  }
+
+  function updateWorkedPreview(){
+    var tipo = el.inTipo.value || "lavoro";
+    if(tipo === "ferie"){
+      el.workedPreview.textContent = "0h 00m";
+      el.paidPreview.textContent = minutesToLabel(standardMinutesOf(state.config));
+      el.pagaPreview.textContent = eur(state.config.paga);
+      el.penaltyNote.textContent = "Ferie: giornata interamente retribuita, senza inserire orari.";
+      return;
+    }
+    if(tipo === "assenza"){
+      el.workedPreview.textContent = "0h 00m";
+      el.paidPreview.textContent = "0h 00m";
+      el.pagaPreview.textContent = eur(0);
+      el.penaltyNote.textContent = "Assenza: giornata registrata e non retribuita.";
+      return;
+    }
+    var min = computeWorkedMinutes(el.inEntrata.value, el.inUscita.value, state.config, isSaturdayKey(state.selectedKey));
+    el.workedPreview.textContent = minutesToLabel(min);
+    if(min === null){
+      el.paidPreview.textContent = "—";
+      el.pagaPreview.textContent = "—";
+      var savedEntry = state.entries[state.selectedKey] || {};
+      if(el.inEntrata.value && !el.inUscita.value && savedEntry.entrata){
+        el.penaltyNote.textContent = "Entrata salvata. Puoi chiudere il file e inserire l'uscita questa sera.";
+      } else if(!el.inEntrata.value && el.inUscita.value){
+        el.penaltyNote.textContent = "Uscita salvata: manca ancora l'orario di entrata.";
+      } else {
+        el.penaltyNote.textContent = "";
+      }
+      return;
+    }
+    var p = computePagaGiorno(el.inEntrata.value, el.inUscita.value, state.config, isSaturdayKey(state.selectedKey));
+    el.paidPreview.textContent = minutesToLabel(p.paidMinutes);
+    el.pagaPreview.textContent = eur(p.paga);
+    if(p.sabato && p.straordinarioMinuti > 0){
+      el.penaltyNote.textContent = "Sabato: " + minutesToLabel(p.straordinarioMinuti) + " di straordinario dopo le 13:00, senza pausa (+" + eur(p.straordinarioValore) + ")." + (p.penalizzato ? " Penalità ritardo: −" + minutesToLabel(p.penaleMinuti) + "." : "");
+    } else if(p.sabato && !p.penalizzato && !p.uscitaAnticipataMinuti){
+      el.penaltyNote.textContent = "Sabato: 08:00–13:00 riconosciuto come giornata intera da " + eur(state.config.paga) + ".";
+    } else if(p.sabato && p.uscitaAnticipataMinuti){
+      el.penaltyNote.textContent = "Sabato con uscita prima delle 13:00: −" + minutesToLabel(p.uscitaAnticipataMinuti) + " di paga.";
+    } else {
+      el.penaltyNote.textContent = p.penalizzato
+        ? "Ritardo nello scaglione da −" + minutesToLabel(p.penaleMinuti) + " di paga (−" + eur(p.penaleValore) + ")"
+        : "Nessuna penalità: entrata entro la tolleranza delle " + minutesToClock(timeToMinutes(state.config.ingressoPrevisto) + state.config.tolleranzaMin) + ".";
+    }
+  }
+  function updateDayTypeUI(){
+    var isLavoro = (el.inTipo.value || "lavoro") === "lavoro";
+    el.btnTipoLavoro.classList.toggle("active", el.inTipo.value === "lavoro");
+    el.btnTipoFerie.classList.toggle("active", el.inTipo.value === "ferie");
+    el.btnTipoAssenza.classList.toggle("active", el.inTipo.value === "assenza");
+    el.workTimeFields.classList.toggle("is-disabled", !isLavoro);
+    el.inEntrata.disabled = !isLavoro;
+    el.inUscita.disabled = !isLavoro;
+    el.btnTimbraEntrata.disabled = !isLavoro;
+    el.btnTimbraUscita.disabled = !isLavoro;
+  }
+  function minutesToClock(totalMin){
+    var h = Math.floor(totalMin/60), m = totalMin % 60;
+    return pad(h) + ":" + pad(m);
+  }
+
+  function selectDate(key){
+    state.selectedKey = key;
+    var parts = key.split("-");
+    state.viewYear = parseInt(parts[0],10);
+    state.viewMonth = parseInt(parts[1],10)-1;
+    renderAll();
+  }
+
+  // ---- Calendar ----
+  function renderCalendar(){
+    el.calMonthLabel.textContent = cap(MESI[state.viewMonth]) + " " + state.viewYear;
+    el.calDow.innerHTML = "";
+    GIORNI_BREVI.forEach(function(d){
+      var c = document.createElement("div");
+      c.className = "cal-dow";
+      c.textContent = d;
+      el.calDow.appendChild(c);
+    });
+
+    el.calGrid.innerHTML = "";
+    var first = new Date(state.viewYear, state.viewMonth, 1);
+    var offset = (first.getDay() + 6) % 7; // Monday = 0
+    for(var i=0;i<offset;i++){
+      var empty = document.createElement("div");
+      empty.className = "cal-cell empty";
+      el.calGrid.appendChild(empty);
+    }
+    var total = daysInMonth(state.viewYear, state.viewMonth);
+    var tKey = todayKey();
+    for(var d=1; d<=total; d++){
+      var key = keyFor(state.viewYear, state.viewMonth, d);
+      var dow = new Date(state.viewYear, state.viewMonth, d).getDay();
+      var cell = document.createElement("div");
+      cell.className = "cal-cell";
+      if(dow === 0 || dow === 6) cell.className += " weekend";
+      if(key === tKey) cell.className += " is-today";
+      if(key === state.selectedKey) cell.className += " is-selected";
+      cell.textContent = d;
+      var entry = state.entries[key];
+      var tipo = entry ? (entry.tipo || "lavoro") : "";
+      if(entry && (tipo !== "lavoro" || entry.entrata || entry.uscita)){
+        var dot = document.createElement("div");
+        dot.className = "dot";
+        if(tipo === "ferie") dot.className += " ferie";
+        else if(tipo === "assenza") dot.className += " assenza";
+        else if(computeWorkedMinutes(entry.entrata, entry.uscita, state.config, isSaturdayKey(key)) === null) dot.className += " incomplete";
+        cell.appendChild(dot);
+      }
+      if(entry && entry.nota && entry.nota.trim()){
+        var noteMark = document.createElement("div");
+        noteMark.className = "note-mark";
+        noteMark.textContent = "📝";
+        noteMark.title = "Questa giornata contiene una nota";
+        cell.appendChild(noteMark);
+      }
+      (function(k){
+        cell.addEventListener("click", function(){ selectDate(k); });
+      })(key);
+      el.calGrid.appendChild(cell);
+    }
+  }
+
+  // ---- Summary ----
+  function monthStats(year, month){
+    var total = daysInMonth(year, month);
+    var giorni = 0, ferie = 0, assenze = 0, oreMin = 0, orePagateMin = 0, penalitaMin = 0, paga = 0;
+    for(var d=1; d<=total; d++){
+      var key = keyFor(year, month, d);
+      var entry = state.entries[key];
+      if(entry){
+        var tipo = entry.tipo || "lavoro";
+        if(tipo === "ferie"){
+          ferie++;
+          orePagateMin += standardMinutesOf(state.config);
+          paga += state.config.paga;
+          continue;
+        }
+        if(tipo === "assenza"){
+          assenze++;
+          continue;
+        }
+        var min = computeWorkedMinutes(entry.entrata, entry.uscita, state.config, new Date(year, month, d).getDay() === 6);
+        if(min !== null){
+          var calcolo = computePagaGiorno(entry.entrata, entry.uscita, state.config, new Date(year, month, d).getDay() === 6);
+          giorni++;
+          oreMin += min;
+          orePagateMin += calcolo.paidMinutes;
+          penalitaMin += calcolo.penaleMinuti;
+          paga += calcolo.paga;
+        }
+      }
+    }
+    return { giorni: giorni, ferie:ferie, assenze:assenze, oreMin: oreMin, orePagateMin:orePagateMin, penalitaMin:penalitaMin, paga: paga };
+  }
+
+  function renderSummary(){
+    var s = monthStats(state.viewYear, state.viewMonth);
+    el.statGiorni.textContent = s.giorni;
+    el.statGiorniSub.textContent = s.ferie + (s.ferie === 1 ? " ferie" : " ferie") + " · " + s.assenze + (s.assenze === 1 ? " assenza" : " assenze");
+    el.statOre.textContent = minutesToLabel(s.oreMin);
+    el.statPaga.textContent = eur(s.paga);
+    el.statPenalita.textContent = minutesToLabel(s.penalitaMin);
+  }
+
+  // ---- Table ----
+  function renderTable(){
+    el.tableBody.innerHTML = "";
+    var total = daysInMonth(state.viewYear, state.viewMonth);
+    var tKey = todayKey();
+    for(var d=1; d<=total; d++){
+      var key = keyFor(state.viewYear, state.viewMonth, d);
+      var dow = new Date(state.viewYear, state.viewMonth, d).getDay();
+      var entry = state.entries[key];
+      var tipo = entry ? (entry.tipo || "lavoro") : "";
+      var isFerie = tipo === "ferie", isAssenza = tipo === "assenza";
+      var hasWorkData = Boolean(entry && (entry.entrata || entry.uscita));
+      var min = entry && tipo === "lavoro" ? computeWorkedMinutes(entry.entrata, entry.uscita, state.config, dow === 6) : null;
+      var worked = min !== null;
+      var giornoPaga = worked ? computePagaGiorno(entry.entrata, entry.uscita, state.config, dow === 6) : null;
+      if(isFerie) giornoPaga = { paidMinutes:standardMinutesOf(state.config), penaleMinuti:0, penalizzato:false, paga:state.config.paga };
+      if(isAssenza) giornoPaga = { paidMinutes:0, penaleMinuti:0, penalizzato:false, paga:0 };
+
+      var tr = document.createElement("tr");
+      var classes = [];
+      if(dow === 0 || dow === 6) classes.push("weekend");
+      if(key === tKey) classes.push("today-row");
+      if(worked) classes.push("worked");
+      if(isFerie) classes.push("ferie-row");
+      if(isAssenza) classes.push("assenza-row");
+      tr.className = classes.join(" ");
+
+      var cells = [
+        pad(d) + "/" + pad(state.viewMonth+1),
+        cap(GIORNI[dow]).slice(0,3),
+        isFerie ? "Ferie" : isAssenza ? "Assenza" : hasWorkData ? "Lavoro" : entry && entry.nota ? "Nota" : "—",
+        tipo === "lavoro" && entry.entrata ? entry.entrata : "—",
+        tipo === "lavoro" && entry.uscita ? entry.uscita : "—",
+        worked ? minutesToLabel(min) : (isFerie || isAssenza ? "0h 00m" : "—"),
+        giornoPaga ? minutesToLabel(giornoPaga.paidMinutes) : "—",
+        worked && giornoPaga.penalizzato ? "−" + minutesToLabel(giornoPaga.penaleMinuti) : "—",
+        giornoPaga ? eur(giornoPaga.paga) : "—",
+        entry && entry.nota ? entry.nota : "—"
+      ];
+      cells.forEach(function(text, idx){
+        var td = document.createElement("td");
+        if(idx === 2 && isFerie) td.className = "status-ferie";
+        if(idx === 2 && isAssenza) td.className = "status-assenza";
+        if(idx === 8) td.className = "paga";
+        if(idx === 9) td.className = "note-cell";
+        td.textContent = text;
+        tr.appendChild(td);
+      });
+      el.tableBody.appendChild(tr);
+    }
+  }
+
+  function renderAll(){
+    renderBrand();
+    renderClock();
+    renderEntryPanel();
+    renderCalendar();
+    renderSummary();
+    renderTable();
+  }
+
+  // ---- Events: entry panel ----
+  el.inEntrata.addEventListener("input", updateWorkedPreview);
+  el.inUscita.addEventListener("input", updateWorkedPreview);
+  function selectDayType(tipo){
+    el.inTipo.value = tipo;
+    updateDayTypeUI();
+    updateWorkedPreview();
+    var label = el.inTipo.value === "ferie" ? "Ferie salvate: giornata pagata interamente" : el.inTipo.value === "assenza" ? "Assenza salvata: paga €0,00" : "Giornata impostata come lavoro";
+    saveCurrentEntry(label);
+  }
+  el.btnTipoLavoro.addEventListener("click", function(){ selectDayType("lavoro"); });
+  el.btnTipoFerie.addEventListener("click", function(){ selectDayType("ferie"); });
+  el.btnTipoAssenza.addEventListener("click", function(){ selectDayType("assenza"); });
+  el.inEntrata.addEventListener("change", function(){
+    updateWorkedPreview();
+    if(el.inEntrata.value) saveCurrentEntry("Entrata " + el.inEntrata.value + " salvata");
+  });
+  el.inUscita.addEventListener("change", function(){
+    updateWorkedPreview();
+    if(el.inUscita.value) saveCurrentEntry("Uscita " + el.inUscita.value + " salvata");
+  });
+
+  el.btnTimbraEntrata.addEventListener("click", function(){
+    if(!el.inEntrata.value) el.inEntrata.value = nowHHMM();
+    updateWorkedPreview();
+    saveCurrentEntry("Entrata " + el.inEntrata.value + " salvata: puoi chiudere il file");
+  });
+  el.btnTimbraUscita.addEventListener("click", function(){
+    if(!el.inUscita.value) el.inUscita.value = nowHHMM();
+    updateWorkedPreview();
+    saveCurrentEntry("Uscita " + el.inUscita.value + " salvata e giornata completata");
+  });
+
+  function saveNoteAndClose(){
+    var nota = el.dayNote.value.trim();
+    var existing = state.entries[state.selectedKey] || { tipo:"lavoro", entrata:"", uscita:"" };
+    if(nota) existing.nota = nota;
+    else delete existing.nota;
+
+    var meaningful = (existing.tipo && existing.tipo !== "lavoro") || existing.entrata || existing.uscita || existing.nota;
+    if(meaningful) state.entries[state.selectedKey] = existing;
+    else delete state.entries[state.selectedKey];
+
+    saveEntries();
+    renderAll();
+    showToast(nota ? "Nota salvata" : "Nota cancellata");
+  }
+
+  el.btnToggleNote.addEventListener("click", function(){
+    if(el.dayNoteBox.classList.contains("hidden")){
+      el.dayNoteBox.classList.remove("hidden");
+      el.dayNote.focus();
+    } else {
+      saveNoteAndClose();
+    }
+  });
+  el.btnSaveCloseNote.addEventListener("click", saveNoteAndClose);
+
+  el.backToday.addEventListener("click", function(){
+    var t = todayObj();
+    state.viewYear = t.y; state.viewMonth = t.m;
+    selectDate(todayKey());
+  });
+
+  function saveCurrentEntry(successMessage){
+    var a = el.inEntrata.value, b = el.inUscita.value;
+    var tipo = el.inTipo.value || "lavoro";
+    var existing = state.entries[state.selectedKey] || {};
+    var nota = existing.nota || "";
+    el.entryError.textContent = "";
+    if(tipo === "lavoro" && !a && !b){
+      if(nota) state.entries[state.selectedKey] = { tipo:"lavoro", entrata:"", uscita:"", nota:nota };
+      else delete state.entries[state.selectedKey];
+      saveEntries();
+      renderAll();
+      showToast(nota ? "Orari rimossi; la nota è stata mantenuta" : "Giorno segnato come non lavorato");
+      return true;
+    }
+    if(tipo === "lavoro" && a && b && timeToMinutes(b) <= timeToMinutes(a)){
+      el.entryError.textContent = "L'uscita deve essere dopo l'entrata.";
+      return false;
+    }
+    var updated = { tipo: tipo, entrata: a || "", uscita: b || "" };
+    if(nota) updated.nota = nota;
+    state.entries[state.selectedKey] = updated;
+    saveEntries();
+    renderAll();
+    showToast(successMessage || (a && b ? "Giornata salvata" : "Orario parziale salvato"));
+    return true;
+  }
+
+  el.btnSalva.addEventListener("click", function(){
+    saveCurrentEntry();
+  });
+
+  el.btnElimina.addEventListener("click", function(){
+    delete state.entries[state.selectedKey];
+    saveEntries();
+    renderAll();
+    showToast("Giorno cancellato");
+  });
+
+  // ---- Events: calendar nav ----
+  el.calPrev.addEventListener("click", function(){
+    state.viewMonth--;
+    if(state.viewMonth < 0){ state.viewMonth = 11; state.viewYear--; }
+    renderAll();
+  });
+  el.calNext.addEventListener("click", function(){
+    state.viewMonth++;
+    if(state.viewMonth > 11){ state.viewMonth = 0; state.viewYear++; }
+    renderAll();
+  });
+
+  // ---- CSV export ----
+  el.btnExportCsv.addEventListener("click", function(){
+    var total = daysInMonth(state.viewYear, state.viewMonth);
+    var rows = ["Data;Giorno;Stato;Entrata;Uscita;Ore effettive;Ore retribuite;Penalita ritardo;Paga (EUR);Note"];
+    for(var d=1; d<=total; d++){
+      var key = keyFor(state.viewYear, state.viewMonth, d);
+      var dow = new Date(state.viewYear, state.viewMonth, d).getDay();
+      var entry = state.entries[key];
+      var tipo = entry ? (entry.tipo || "lavoro") : "";
+      var isFerie = tipo === "ferie", isAssenza = tipo === "assenza";
+      var hasWorkData = Boolean(entry && (entry.entrata || entry.uscita));
+      var min = entry && tipo === "lavoro" ? computeWorkedMinutes(entry.entrata, entry.uscita, state.config, dow === 6) : null;
+      var worked = min !== null;
+      var giornoPaga = worked ? computePagaGiorno(entry.entrata, entry.uscita, state.config, dow === 6) : null;
+      if(isFerie) giornoPaga = { paidMinutes:standardMinutesOf(state.config), penaleMinuti:0, penalizzato:false, paga:state.config.paga };
+      if(isAssenza) giornoPaga = { paidMinutes:0, penaleMinuti:0, penalizzato:false, paga:0 };
+      rows.push([
+        pad(d) + "/" + pad(state.viewMonth+1) + "/" + state.viewYear,
+        cap(GIORNI[dow]),
+        isFerie ? "Ferie" : isAssenza ? "Assenza" : hasWorkData ? "Lavoro" : entry && entry.nota ? "Nota" : "Non registrato",
+        tipo === "lavoro" && entry.entrata ? entry.entrata : "-",
+        tipo === "lavoro" && entry.uscita ? entry.uscita : "-",
+        worked ? minutesToLabel(min) : (isFerie || isAssenza ? "0h 00m" : "-"),
+        giornoPaga ? minutesToLabel(giornoPaga.paidMinutes) : "-",
+        worked && giornoPaga.penalizzato ? minutesToLabel(giornoPaga.penaleMinuti) : "0h 00m",
+        giornoPaga ? giornoPaga.paga.toFixed(2).replace(".", ",") : "0,00",
+        csvEscape(entry && entry.nota ? entry.nota : "")
+      ].join(";"));
+    }
+    var csv = "\uFEFF" + rows.join("\r\n");
+    downloadTextFile(
+      "registro-orari_" + MESI[state.viewMonth] + "-" + state.viewYear + ".csv",
+      csv,
+      "text/csv;charset=utf-8;",
+      "CSV esportato"
+    );
+  });
+
+  el.btnPrint.addEventListener("click", function(){ window.print(); });
+
+  // ---- Aggiornamenti automatici ----
+  var updateCheckRunning = false;
+  async function checkForUpdates(manual){
+    if(!nativeInvoke){
+      if(manual) showToast("Gli aggiornamenti automatici sono disponibili nell’app installata");
+      return;
+    }
+    if(updateCheckRunning) return;
+    updateCheckRunning = true;
+    el.btnCheckUpdates.disabled = true;
+    el.updateStateText.textContent = "Controllo aggiornamenti in corso…";
+    try{
+      var info = await nativeInvoke("check_for_update");
+      if(info){
+        el.availableVersion.textContent = "v" + info.version;
+        el.updateNotes.textContent = info.notes || "Miglioramenti e correzioni per Registro Presenze.";
+        el.updateProgress.classList.remove("visible");
+        el.updateProgressText.textContent = "I dati e i backup resteranno invariati.";
+        el.btnInstallUpdate.disabled = false;
+        el.btnInstallUpdate.textContent = "Scarica e installa";
+        el.btnUpdateLater.disabled = false;
+        el.updateOverlay.classList.remove("hidden");
+        el.updateStateText.textContent = "Nuova versione disponibile: v" + info.version;
+      }else{
+        el.updateStateText.innerHTML = 'Versione installata: <span class="update-version">' + APP_VERSION + '</span> · aggiornata';
+        if(manual) showToast("Hai già la versione più recente");
+      }
+    }catch(err){
+      console.error("Controllo aggiornamenti non riuscito", err);
+      el.updateStateText.innerHTML = 'Versione installata: <span class="update-version">' + APP_VERSION + '</span>';
+      if(manual) showToast("Impossibile controllare ora. Verifica la connessione Internet.");
+    }finally{
+      updateCheckRunning = false;
+      el.btnCheckUpdates.disabled = false;
+    }
+  }
+
+  el.btnCheckUpdates.addEventListener("click", function(){ checkForUpdates(true); });
+  el.btnUpdateLater.addEventListener("click", function(){ el.updateOverlay.classList.add("hidden"); });
+  el.updateOverlay.addEventListener("click", function(e){
+    if(e.target === el.updateOverlay && !el.btnInstallUpdate.disabled) el.updateOverlay.classList.add("hidden");
+  });
+  el.btnInstallUpdate.addEventListener("click", async function(){
+    el.btnInstallUpdate.disabled = true;
+    el.btnUpdateLater.disabled = true;
+    el.btnInstallUpdate.textContent = "Installazione…";
+    el.updateProgress.classList.add("visible");
+    el.updateProgressText.textContent = "Download e installazione in corso. Non chiudere l’app.";
+    try{
+      await nativeSaveQueue.catch(function(){});
+      await nativeInvoke("install_update");
+    }catch(err){
+      console.error("Installazione aggiornamento non riuscita", err);
+      el.updateProgress.classList.remove("visible");
+      el.updateProgressText.textContent = "Aggiornamento non riuscito. I dati non sono stati modificati.";
+      el.btnInstallUpdate.disabled = false;
+      el.btnUpdateLater.disabled = false;
+      el.btnInstallUpdate.textContent = "Riprova";
+    }
+  });
+
+  // ---- Settings modal ----
+  function openSettings(){
+    el.cfgNomeApp.value = state.config.nomeApp || "Registro Presenze";
+    el.cfgPausa.value = state.config.pausa;
+    el.cfgPaga.value = state.config.paga;
+    el.cfgIngresso.value = state.config.ingressoPrevisto;
+    el.cfgFineMattina.value = state.config.fineMattina;
+    el.cfgInizioPomeriggio.value = state.config.inizioPomeriggio;
+    el.cfgUscitaPrevista.value = state.config.uscitaPrevista;
+    el.cfgTolleranza.value = state.config.tolleranzaMin;
+    el.cfgPenale.value = state.config.penaleMin;
+    el.settingsOverlay.classList.remove("hidden");
+  }
+  function closeSettings(){ el.settingsOverlay.classList.add("hidden"); }
+
+  el.btnSettings.addEventListener("click", openSettings);
+  el.btnCloseSettings.addEventListener("click", closeSettings);
+  el.settingsOverlay.addEventListener("click", function(e){
+    if(e.target === el.settingsOverlay) closeSettings();
+  });
+
+  el.btnSaveSettings.addEventListener("click", function(){
+    var nomeApp = el.cfgNomeApp.value.trim();
+    var pausa = parseInt(el.cfgPausa.value, 10);
+    var paga = parseFloat(el.cfgPaga.value);
+    state.config.nomeApp = nomeApp || "Registro Presenze";
+    state.config.pausa = isNaN(pausa) ? state.config.pausa : Math.max(0,pausa);
+    state.config.paga = isNaN(paga) ? state.config.paga : Math.max(0,paga);
+
+    if(el.cfgIngresso.value) state.config.ingressoPrevisto = el.cfgIngresso.value;
+    if(el.cfgFineMattina.value) state.config.fineMattina = el.cfgFineMattina.value;
+    if(el.cfgInizioPomeriggio.value) state.config.inizioPomeriggio = el.cfgInizioPomeriggio.value;
+    if(el.cfgUscitaPrevista.value) state.config.uscitaPrevista = el.cfgUscitaPrevista.value;
+    var tolleranza = parseInt(el.cfgTolleranza.value, 10);
+    var penale = parseInt(el.cfgPenale.value, 10);
+    state.config.tolleranzaMin = isNaN(tolleranza) ? state.config.tolleranzaMin : Math.max(0,tolleranza);
+    state.config.penaleMin = isNaN(penale) ? state.config.penaleMin : Math.max(0,penale);
+
+    saveConfig();
+    closeSettings();
+    renderAll();
+    showToast("Impostazioni salvate");
+  });
+
+  // ---- Backup / restore ----
+  function exportBackup(){
+    var data = { schemaVersion:1, entries: state.entries, config: state.config, exportedAt: new Date().toISOString() };
+    var today = todayObj();
+    downloadTextFile(
+      "registro-orari-backup_" + keyFor(today.y,today.m,today.d) + ".json",
+      JSON.stringify(data, null, 2),
+      "application/json",
+      "Backup esportato"
+    );
+  }
+  el.btnExportBackup.addEventListener("click", exportBackup);
+  el.btnQuickBackup.addEventListener("click", exportBackup);
+
+  el.btnImportBackup.addEventListener("click", function(){ el.fileImport.click(); });
+  el.fileImport.addEventListener("change", function(){
+    var file = el.fileImport.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var data = JSON.parse(reader.result);
+        if(!data.entries) throw new Error("formato non valido");
+        var ok = confirm("Importare questo backup? I dati attuali salvati su questo computer verranno sovrascritti.");
+        if(!ok) return;
+        state.entries = data.entries || {};
+        state.config = Object.assign(state.config, data.config || {});
+        saveEntries();
+        saveConfig();
+        renderAll();
+        showToast("Backup importato");
+      }catch(err){
+        alert("Il file selezionato non è un backup valido.");
+      }
+      el.fileImport.value = "";
+    };
+    reader.readAsText(file);
+  });
+
+  el.btnResetAll.addEventListener("click", function(){
+    var ok = confirm("Cancellare TUTTI i giorni registrati? Questa azione non si può annullare. Ti consigliamo di esportare prima un backup.");
+    if(!ok) return;
+    state.entries = {};
+    saveEntries();
+    closeSettings();
+    renderAll();
+    showToast("Tutti i dati sono stati cancellati");
+  });
+
+  // ---- Init ----
+  await loadState();
+  renderAll();
+  setInterval(renderClock, 30000);
+  setTimeout(function(){ checkForUpdates(false); }, 1800);
+
+})();
+</script>
+</body>
+</html>
