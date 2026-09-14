@@ -21,7 +21,7 @@ if ! xcode-select -p >/dev/null 2>&1; then
   exit 1
 fi
 
-SIGNING_KEY_PATH="$HOME/.registro-presenze/registro-presenze.key"
+SIGNING_KEY_PATH="$HOME/.registro-presenze/registro-presenze-v2.key"
 if [[ ! -f "$SIGNING_KEY_PATH" ]]; then
   osascript -e 'display dialog "Manca la chiave privata degli aggiornamenti. Non è possibile creare una versione aggiornabile." buttons {"OK"} default button "OK" with icon caution'
   exit 1

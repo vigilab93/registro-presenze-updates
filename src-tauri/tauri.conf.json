@@ -40,7 +40,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEMzMUY3NjY0MERGNjM0NDEKUldSQk5QWU5aSFlmdzBQZ1A4amxqRU1vOHYrT0Exa3dXdVdZdkRvRGpoNkFLb0hwa1UwU211UkUK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEUzRTg1N0QxODFCMzhDRTMKUldUampMT0IwVmZvNDkxNVAxQ0tuc0JIS1dEQnhjeUZXU0pHRG5OM25DOEM3MEYrWEFxY0xaY0kK",
       "endpoints": [
         "https://github.com/vigilab93/registro-presenze-updates/releases/latest/download/latest.json"
       ],

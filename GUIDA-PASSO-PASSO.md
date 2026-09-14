@@ -125,4 +125,4 @@ Se l’archivio principale è danneggiato o assente, all’avvio l’app tenta a
 - Database, impostazioni e backup non vengono sostituiti dall’aggiornamento.
 - Gli aggiornamenti vengono accettati soltanto se firmati con la chiave privata originale.
 
-La chiave privata si trova sul Mac di Vigi in `~/.registro-presenze/registro-presenze.key`. Non deve essere caricata nel repository, inviata in chat o passata ai colleghi. Anche la password deve essere conservata separatamente e in modo sicuro.
+La chiave privata si trova sul Mac di Vigi in `~/.registro-presenze/registro-presenze-v2.key`. Non deve essere caricata nel repository, inviata in chat o passata ai colleghi. Anche la password deve essere conservata separatamente e in modo sicuro.
