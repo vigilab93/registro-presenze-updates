@@ -9,6 +9,8 @@ L’app non usa la memoria di Chrome, Safari o Edge. Ogni modifica viene salvata
 
 La versione 1.1.0 introduce gli aggiornamenti firmati. Dalla versione 1.3.0 l’app controlla automaticamente gli aggiornamenti all’avvio e periodicamente. Su Windows può installarli e riavviarsi; su macOS apre direttamente la pagina dell’ultima versione per scaricare il file `aarch64.dmg`, evitando il difetto di sostituzione dell’app presente nell’updater Tauri attuale. I dati personali non vengono inclusi negli aggiornamenti e restano sul computer.
 
+La versione 1.4.0 nasconde gli importi all’avvio: il pulsante **Mostra saldi** li mostra o li nasconde insieme nell’app e nel report di stampa. Aggiunge inoltre il conteggio delle ferie godute nell’anno, consente di registrare in anticipo l’orario di uscita e forza il report mensile su una sola pagina A4 verticale. Su Windows l’app si avvia senza aprire una finestra del terminale.
+
 ## Fase A — preparare il Mac di Vigi
 
 Questa preparazione si esegue una sola volta sul Mac usato per creare la versione Mac.

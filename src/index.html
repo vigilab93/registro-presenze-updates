@@ -42,31 +42,31 @@
   }
   #printReport{display:none;}
   @media print{
-    @page{size:A4 landscape;margin:10mm;}
-    html,body{background:#fff !important;color:#26221B;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
+    @page{size:210mm 297mm;margin:6mm;}
+    html,body{width:198mm;background:#fff !important;color:#26221B;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
     .app,.toast,.modal-overlay{display:none !important;}
-    #printReport{display:block !important;font-family:var(--font-ui);}
-    .print-sheet{break-inside:avoid;page-break-inside:avoid;}
-    .print-header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid #D9CFAF;padding-bottom:5px;margin-bottom:6px;}
-    .print-title{font-size:15px;font-weight:700;}
-    .print-month{font:11px var(--font-mono);color:#726A57;margin-top:2px;}
-    .print-page-number{font-size:8px;color:#726A57;}
-    .print-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:7px;}
-    .print-stat{border:1px solid #D9CFAF;border-radius:5px;padding:5px 7px;background:#FBF8EE;}
-    .print-stat-label{font-size:7.5px;color:#726A57;margin-bottom:2px;}
-    .print-stat-value{font:700 11px var(--font-mono);}
+    #printReport{display:block !important;width:198mm;font-family:var(--font-ui);}
+    .print-sheet{width:100%;max-height:285mm;overflow:hidden;break-inside:avoid;page-break-inside:avoid;page-break-after:avoid;}
+    .print-header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid #D9CFAF;padding-bottom:4px;margin-bottom:5px;}
+    .print-title{font-size:13px;font-weight:700;}
+    .print-month{font:9px var(--font-mono);color:#726A57;margin-top:1px;}
+    .print-page-number{font-size:7px;color:#726A57;}
+    .print-summary{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:5px;}
+    .print-stat{border:1px solid #D9CFAF;border-radius:4px;padding:4px 5px;background:#FBF8EE;}
+    .print-stat-label{font-size:6.5px;color:#726A57;margin-bottom:1px;}
+    .print-stat-value{font:700 9px var(--font-mono);}
     .print-stat-value.accent{color:#9B2C1E;}
-    .print-stat-sub{font-size:7px;color:#726A57;margin-top:1px;}
-    .print-table-title{font-size:9px;font-weight:700;margin:0 0 3px;}
-    .print-table{width:100%;border-collapse:collapse;table-layout:fixed;font:7.2px/1.1 var(--font-mono);}
+    .print-stat-sub{font-size:5.8px;color:#726A57;margin-top:1px;}
+    .print-table-title{font-size:7.5px;font-weight:700;margin:0 0 2px;}
+    .print-table{width:100%;border-collapse:collapse;table-layout:fixed;font:5.9px/1.05 var(--font-mono);}
     .print-table thead{display:table-header-group;}
     .print-table tr{break-inside:avoid;page-break-inside:avoid;}
-    .print-table th{font:600 7px/1.1 var(--font-ui);color:#726A57;text-align:left;padding:2px 4px;border-bottom:1px solid #D9CFAF;}
-    .print-table td{padding:2px 4px;border-bottom:1px solid rgba(217,207,175,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .print-table th:last-child,.print-table td:last-child{width:17%;}
+    .print-table th{font:600 5.8px/1.05 var(--font-ui);color:#726A57;text-align:left;padding:1.6px 2px;border-bottom:1px solid #D9CFAF;}
+    .print-table td{padding:1.6px 2px;border-bottom:1px solid rgba(217,207,175,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .print-table th:last-child,.print-table td:last-child{width:14%;}
     .print-table .weekend td{color:#726A57;}
     .print-table .worked td.paga{color:#9B2C1E;font-weight:700;}
-    .print-rules{margin-top:5px;font-size:6.8px;line-height:1.3;color:#726A57;}
+    .print-rules{margin-top:3px;font-size:5.5px;line-height:1.18;color:#726A57;}
   }
 
   .app{max-width:1040px;margin:0 auto;padding:28px 20px 60px;}
@@ -93,7 +93,7 @@
   }
   .clock-readout .dow{color:#D6A793;}
 
-  .topbar-actions{display:flex;gap:10px;}
+  .topbar-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
   .saved-indicator{display:flex;align-items:center;gap:6px;color:#9FD0AF;font-size:11.5px;padding:0 4px;white-space:nowrap;}
   .saved-indicator::before{content:"";width:7px;height:7px;border-radius:50%;background:#55B878;box-shadow:0 0 0 3px rgba(85,184,120,.13);}
   .btn-steel{
@@ -270,9 +270,8 @@
   .cal-cell.is-selected .dot{background:var(--paper);}
 
   /* Summary */
-  .summary-grid{
-    display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
-  }
+  .summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+  @media (max-width:980px){.summary-grid{grid-template-columns:repeat(3,1fr);}}
   @media (max-width:700px){.summary-grid{grid-template-columns:repeat(2,1fr);}}
   .stat{
     background:var(--paper-raised);
@@ -317,7 +316,7 @@
   }
   .modal h3{margin:0 0 16px;font-size:15px;color:var(--ink);}
   .modal .field{margin-bottom:14px;}
-  .modal input[type=number],.modal input[type=text]{
+  .modal input[type=number],.modal input[type=text],.modal input[type=password]{
     width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--paper-line);
     font-family:var(--font-mono);font-size:15px;background:var(--paper-raised);color:var(--ink);
   }
@@ -356,6 +355,7 @@
     </div>
     <div class="topbar-actions">
       <span class="saved-indicator" id="savedIndicator">Archivio protetto · salvataggio automatico</span>
+      <button class="btn-steel" id="btnToggleSaldi" type="button" aria-pressed="false" title="Mostra o nascondi tutti gli importi">👁 Mostra saldi</button>
       <button class="btn-steel" id="btnQuickBackup">Scarica backup</button>
       <button class="btn-steel" id="btnPrint">Stampa / Salva PDF</button>
       <button class="btn-steel" id="btnSettings">Impostazioni</button>
@@ -398,7 +398,7 @@
         </div>
       </div>
 
-      <div class="entry-hint">Clicca sulle ore o sui minuti per modificarli. Dopo due cifre delle ore vengono selezionati automaticamente i minuti. Se lasci il campo vuoto, “Salva entrata/uscita” userà l’ora del Mac.</div>
+      <div class="entry-hint">Clicca sulle ore o sui minuti per modificarli. Dopo due cifre delle ore vengono selezionati automaticamente i minuti. Puoi inserire anche un’uscita successiva all’ora attuale. Se lasci il campo vuoto, “Salva entrata/uscita” userà l’ora del computer.</div>
       <div class="worked-preview">Ore effettive (pausa esclusa): <b id="workedPreview">—</b></div>
       <div class="worked-preview">Ore retribuite: <b id="paidPreview">—</b></div>
       <div class="worked-preview">Paga di oggi: <b id="pagaPreview">—</b></div>
@@ -448,9 +448,14 @@
           <div class="label">Ore effettive</div>
           <div class="value" id="statOre">0h 00m</div>
         </div>
+        <div class="stat">
+          <div class="label">Ferie godute nell’anno</div>
+          <div class="value" id="statFerieAnno">0</div>
+          <div class="sub" id="statFerieAnnoSub">anno corrente</div>
+        </div>
         <div class="stat accent">
           <div class="label">Paga stimata</div>
-          <div class="value" id="statPaga">€0</div>
+          <div class="value" id="statPaga">•••• €</div>
           <div class="sub">prima della busta paga</div>
         </div>
         <div class="stat">
@@ -548,7 +553,7 @@
 
     <div class="modal-subhead">Aggiornamenti</div>
     <div class="update-card">
-      <p id="updateStateText">Versione installata: <span class="update-version">1.3.1</span></p>
+      <p id="updateStateText">Versione installata: <span class="update-version">1.4.0</span></p>
       <button class="btn-ghost" id="btnCheckUpdates">Controlla aggiornamenti</button>
     </div>
 
@@ -593,7 +598,7 @@
   var GIORNI_BREVI = ["L","M","M","G","V","S","D"]; // header, Monday-first
   var LS_ENTRIES = "registroOrari.entries";
   var LS_CONFIG = "registroOrari.config";
-  var APP_VERSION = "1.3.1";
+  var APP_VERSION = "1.4.0";
   var nativeInvoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke
     ? window.__TAURI__.core.invoke
     : null;
@@ -762,6 +767,9 @@
   function eur(n){
     return new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", minimumFractionDigits:2 }).format(Number(n) || 0);
   }
+  function saldo(n){
+    return state.saldiVisibili ? eur(n) : "•••• €";
+  }
   function csvEscape(value){
     var s = String(value == null ? "" : value);
     return /[;"\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
@@ -777,7 +785,8 @@
     },
     viewYear: todayObj().y,
     viewMonth: todayObj().m,
-    selectedKey: todayKey()
+    selectedKey: todayKey(),
+    saldiVisibili: false
   };
 
   function standardMinutesOf(cfg){
@@ -938,11 +947,14 @@
     statGiorni: document.getElementById("statGiorni"),
     statGiorniSub: document.getElementById("statGiorniSub"),
     statOre: document.getElementById("statOre"),
+    statFerieAnno: document.getElementById("statFerieAnno"),
+    statFerieAnnoSub: document.getElementById("statFerieAnnoSub"),
     statPaga: document.getElementById("statPaga"),
     statPenalita: document.getElementById("statPenalita"),
     tableBody: document.getElementById("tableBody"),
     btnExportCsv: document.getElementById("btnExportCsv"),
     btnQuickBackup: document.getElementById("btnQuickBackup"),
+    btnToggleSaldi: document.getElementById("btnToggleSaldi"),
     btnPrint: document.getElementById("btnPrint"),
     btnSettings: document.getElementById("btnSettings"),
     settingsOverlay: document.getElementById("settingsOverlay"),
@@ -994,6 +1006,13 @@
     document.title = nome;
   }
 
+  function renderSaldiPrivacy(){
+    el.btnToggleSaldi.textContent = state.saldiVisibili ? "🙈 Nascondi saldi" : "👁 Mostra saldi";
+    el.btnToggleSaldi.setAttribute("aria-pressed", state.saldiVisibili ? "true" : "false");
+    el.btnToggleSaldi.title = state.saldiVisibili ? "Nascondi tutti gli importi" : "Mostra tutti gli importi";
+    if(el.cfgPaga) el.cfgPaga.type = state.saldiVisibili ? "number" : "password";
+  }
+
   // ---- Entry panel ----
   function renderEntryPanel(){
     var isToday = state.selectedKey === todayKey();
@@ -1033,14 +1052,14 @@
     if(tipo === "ferie"){
       el.workedPreview.textContent = "0h 00m";
       el.paidPreview.textContent = minutesToLabel(standardMinutesOf(state.config));
-      el.pagaPreview.textContent = eur(state.config.paga);
+      el.pagaPreview.textContent = saldo(state.config.paga);
       el.penaltyNote.textContent = "Ferie: giornata interamente retribuita, senza inserire orari.";
       return;
     }
     if(tipo === "assenza"){
       el.workedPreview.textContent = "0h 00m";
       el.paidPreview.textContent = "0h 00m";
-      el.pagaPreview.textContent = eur(0);
+      el.pagaPreview.textContent = saldo(0);
       el.penaltyNote.textContent = "Assenza: giornata registrata e non retribuita.";
       return;
     }
@@ -1061,16 +1080,16 @@
     }
     var p = computePagaGiorno(el.inEntrata.value, el.inUscita.value, state.config, isSaturdayKey(state.selectedKey));
     el.paidPreview.textContent = minutesToLabel(p.paidMinutes);
-    el.pagaPreview.textContent = eur(p.paga);
+    el.pagaPreview.textContent = saldo(p.paga);
     var dettagliPenalita = [];
     if(p.ritardoMinuti > 0) dettagliPenalita.push("ritardo −" + minutesToLabel(p.ritardoMinuti));
     if(p.uscitaAnticipataMinuti > 0) dettagliPenalita.push("uscita anticipata −" + minutesToLabel(p.uscitaAnticipataMinuti));
     if(p.straordinarioMinuti > 0){
-      el.penaltyNote.textContent = (p.sabato ? "Sabato: " : "") + minutesToLabel(p.straordinarioMinuti) + " di straordinario (+" + eur(p.straordinarioValore) + ")." + (dettagliPenalita.length ? " Decurtazioni: " + dettagliPenalita.join("; ") + "." : "");
+      el.penaltyNote.textContent = (p.sabato ? "Sabato: " : "") + minutesToLabel(p.straordinarioMinuti) + " di straordinario (+" + saldo(p.straordinarioValore) + ")." + (dettagliPenalita.length ? " Decurtazioni: " + dettagliPenalita.join("; ") + "." : "");
     } else if(p.sabato && !p.penalizzato){
-      el.penaltyNote.textContent = "Sabato: 08:00–13:00 riconosciuto come giornata intera da " + eur(state.config.paga) + ".";
+      el.penaltyNote.textContent = "Sabato: 08:00–13:00 riconosciuto come giornata intera da " + saldo(state.config.paga) + ".";
     } else if(dettagliPenalita.length){
-      el.penaltyNote.textContent = "Decurtazioni: " + dettagliPenalita.join("; ") + ". Totale −" + minutesToLabel(p.penaleMinuti) + " (−" + eur(p.penaleValore) + ").";
+      el.penaltyNote.textContent = "Decurtazioni: " + dettagliPenalita.join("; ") + ". Totale −" + minutesToLabel(p.penaleMinuti) + " (−" + saldo(p.penaleValore) + ").";
     } else {
       el.penaltyNote.textContent = "Nessuna penalità: entrata entro la tolleranza delle " + minutesToClock(timeToMinutes(state.config.ingressoPrevisto) + state.config.tolleranzaMin) + " e uscita completa.";
     }
@@ -1186,12 +1205,22 @@
     return { giorni: giorni, ferie:ferie, assenze:assenze, oreMin: oreMin, orePagateMin:orePagateMin, penalitaMin:penalitaMin, paga: paga };
   }
 
+  function annualVacationCount(year){
+    var prefix = String(year) + "-";
+    return Object.keys(state.entries).reduce(function(total, key){
+      var entry = state.entries[key];
+      return total + (key.indexOf(prefix) === 0 && entry && (entry.tipo || "lavoro") === "ferie" ? 1 : 0);
+    }, 0);
+  }
+
   function renderSummary(){
     var s = monthStats(state.viewYear, state.viewMonth);
     el.statGiorni.textContent = s.giorni;
     el.statGiorniSub.textContent = s.ferie + (s.ferie === 1 ? " ferie" : " ferie") + " · " + s.assenze + (s.assenze === 1 ? " assenza" : " assenze");
     el.statOre.textContent = minutesToLabel(s.oreMin);
-    el.statPaga.textContent = eur(s.paga);
+    el.statFerieAnno.textContent = annualVacationCount(state.viewYear);
+    el.statFerieAnnoSub.textContent = "anno " + state.viewYear;
+    el.statPaga.textContent = saldo(s.paga);
     el.statPenalita.textContent = minutesToLabel(s.penalitaMin);
   }
 
@@ -1231,7 +1260,7 @@
         worked ? minutesToLabel(min) : (isFerie || isAssenza ? "0h 00m" : "—"),
         giornoPaga ? minutesToLabel(giornoPaga.paidMinutes) : "—",
         worked && giornoPaga.penalizzato ? "−" + minutesToLabel(giornoPaga.penaleMinuti) : "—",
-        giornoPaga ? eur(giornoPaga.paga) : "—",
+        giornoPaga ? saldo(giornoPaga.paga) : "—",
         entry && entry.nota ? entry.nota : "—"
       ];
       cells.forEach(function(text, idx){
@@ -1249,12 +1278,19 @@
 
   function renderAll(){
     renderBrand();
+    renderSaldiPrivacy();
     renderClock();
     renderEntryPanel();
     renderCalendar();
     renderSummary();
     renderTable();
   }
+
+  el.btnToggleSaldi.addEventListener("click", function(){
+    state.saldiVisibili = !state.saldiVisibili;
+    renderAll();
+    showToast(state.saldiVisibili ? "Saldi visibili" : "Saldi nascosti");
+  });
 
   // ---- Events: entry panel ----
   attachSmartTimeInput(el.inEntrata);
@@ -1265,7 +1301,7 @@
     el.inTipo.value = tipo;
     updateDayTypeUI();
     updateWorkedPreview();
-    var label = el.inTipo.value === "ferie" ? "Ferie salvate: giornata pagata interamente" : el.inTipo.value === "assenza" ? "Assenza salvata: paga €0,00" : "Giornata impostata come lavoro";
+    var label = el.inTipo.value === "ferie" ? "Ferie salvate: contatore annuale aggiornato" : el.inTipo.value === "assenza" ? "Assenza salvata: giornata non retribuita" : "Giornata impostata come lavoro";
     saveCurrentEntry(label);
   }
   el.btnTipoLavoro.addEventListener("click", function(){ selectDayType("lavoro"); });
@@ -1457,7 +1493,8 @@
         [
           ["Giorni lavorati", String(stats.giorni), stats.ferie + " ferie · " + stats.assenze + " assenze", false],
           ["Ore effettive", minutesToLabel(stats.oreMin), "", false],
-          ["Paga stimata", eur(stats.paga), "prima della busta paga", true],
+          ["Ferie nell’anno", String(annualVacationCount(state.viewYear)), "anno " + state.viewYear, false],
+          ["Paga stimata", saldo(stats.paga), "prima della busta paga", true],
           ["Decurtazioni orarie", minutesToLabel(stats.penalitaMin), "totale decurtato", false]
         ].forEach(function(item){
           var stat = document.createElement("div");

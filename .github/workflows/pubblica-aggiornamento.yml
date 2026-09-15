@@ -49,9 +49,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           retryAttempts: 3
-          tagName: registro-presenze-v1.3.1
-          releaseName: Registro Presenze v1.3.1
-          releaseBody: "Report mensile raccolto in una sola pagina A4; uscita anticipata calcolata a scaglioni di 30 minuti come il ritardo in entrata. I dati e i backup personali restano invariati."
+          tagName: registro-presenze-v1.4.0
+          releaseName: Registro Presenze v1.4.0
+          releaseBody: "Saldi nascosti con comando Mostra saldi; report A4 verticale anche su Windows; terminale Windows nascosto; uscita futura inseribile; contatore annuale delle ferie. I dati e i backup personali restano invariati."
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
