@@ -43,30 +43,33 @@
   #printReport{display:none;}
   @media print{
     @page{size:210mm 297mm;margin:6mm;}
-    html,body{width:198mm;background:#fff !important;color:#26221B;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
+    html,body{width:198mm;height:285mm;margin:0 !important;padding:0 !important;background:#fff !important;color:#26221B;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
     .app,.toast,.modal-overlay{display:none !important;}
-    #printReport{display:block !important;width:198mm;font-family:var(--font-ui);}
-    .print-sheet{width:100%;max-height:285mm;overflow:hidden;break-inside:avoid;page-break-inside:avoid;page-break-after:avoid;}
-    .print-header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid #D9CFAF;padding-bottom:4px;margin-bottom:5px;}
-    .print-title{font-size:13px;font-weight:700;}
-    .print-month{font:9px var(--font-mono);color:#726A57;margin-top:1px;}
-    .print-page-number{font-size:7px;color:#726A57;}
-    .print-summary{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:5px;}
-    .print-stat{border:1px solid #D9CFAF;border-radius:4px;padding:4px 5px;background:#FBF8EE;}
-    .print-stat-label{font-size:6.5px;color:#726A57;margin-bottom:1px;}
-    .print-stat-value{font:700 9px var(--font-mono);}
+    #printReport{display:block !important;width:198mm;height:285mm;font-family:var(--font-ui);}
+    .print-sheet{display:flex;flex-direction:column;width:100%;height:285mm;overflow:hidden;break-inside:avoid;page-break-inside:avoid;page-break-after:avoid;}
+    .print-header{flex:none;display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid #D9CFAF;padding-bottom:5px;margin-bottom:6px;}
+    .print-title{font-size:15px;font-weight:700;}
+    .print-month{font:10px var(--font-mono);color:#726A57;margin-top:2px;}
+    .print-page-number{font-size:8px;color:#726A57;}
+    .print-summary{flex:none;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:7px;}
+    .print-stat{border:1px solid #D9CFAF;border-radius:5px;padding:5px 7px;background:#FBF8EE;}
+    .print-stat-label{font-size:7.5px;color:#726A57;margin-bottom:2px;}
+    .print-stat-value{font:700 11px var(--font-mono);}
     .print-stat-value.accent{color:#9B2C1E;}
-    .print-stat-sub{font-size:5.8px;color:#726A57;margin-top:1px;}
-    .print-table-title{font-size:7.5px;font-weight:700;margin:0 0 2px;}
-    .print-table{width:100%;border-collapse:collapse;table-layout:fixed;font:5.9px/1.05 var(--font-mono);}
+    .print-stat-sub{font-size:6.8px;color:#726A57;margin-top:1px;}
+    .print-table-title{flex:none;font-size:9px;font-weight:700;margin:0 0 3px;}
+    .print-table-wrap{flex:none;}
+    .print-table{width:100%;border-collapse:collapse;table-layout:fixed;font:8px/1.12 var(--font-mono);}
     .print-table thead{display:table-header-group;}
     .print-table tr{break-inside:avoid;page-break-inside:avoid;}
-    .print-table th{font:600 5.8px/1.05 var(--font-ui);color:#726A57;text-align:left;padding:1.6px 2px;border-bottom:1px solid #D9CFAF;}
-    .print-table td{padding:1.6px 2px;border-bottom:1px solid rgba(217,207,175,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .print-table thead tr{height:6mm;}
+    .print-table tbody tr{height:var(--print-row-height,7.2mm);}
+    .print-table th{font:600 7.5px/1.1 var(--font-ui);color:#726A57;text-align:left;padding:2px 3px;border-bottom:1px solid #D9CFAF;}
+    .print-table td{padding:2px 3px;border-bottom:1px solid rgba(217,207,175,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .print-table th:last-child,.print-table td:last-child{width:14%;}
     .print-table .weekend td{color:#726A57;}
     .print-table .worked td.paga{color:#9B2C1E;font-weight:700;}
-    .print-rules{margin-top:3px;font-size:5.5px;line-height:1.18;color:#726A57;}
+    .print-rules{flex:none;margin-top:5px;font-size:6.8px;line-height:1.3;color:#726A57;}
   }
 
   .app{max-width:1040px;margin:0 auto;padding:28px 20px 60px;}
@@ -553,7 +556,7 @@
 
     <div class="modal-subhead">Aggiornamenti</div>
     <div class="update-card">
-      <p id="updateStateText">Versione installata: <span class="update-version">1.4.1</span></p>
+      <p id="updateStateText">Versione installata: <span class="update-version">1.4.3</span></p>
       <button class="btn-ghost" id="btnCheckUpdates">Controlla aggiornamenti</button>
     </div>
 
@@ -598,7 +601,7 @@
   var GIORNI_BREVI = ["L","M","M","G","V","S","D"]; // header, Monday-first
   var LS_ENTRIES = "registroOrari.entries";
   var LS_CONFIG = "registroOrari.config";
-  var APP_VERSION = "1.4.1";
+  var APP_VERSION = "1.4.3";
   var nativeInvoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke
     ? window.__TAURI__.core.invoke
     : null;
@@ -811,8 +814,9 @@
   }
 
   // Calcolo retribuzione: entro la tolleranza l'inizio pagato resta 08:15.
-  // Ingresso e uscita anticipata usano gli stessi scaglioni: ogni frazione iniziata
-  // vale 30 minuti; sul confine esatto scatta lo scaglione successivo.
+  // Le decurtazioni scattano appena inizia uno scaglione di ritardo/uscita anticipata.
+  // Lo straordinario, invece, viene pagato solo per scaglioni completati: 17:01–17:29
+  // non aggiunge nulla, 17:30–17:59 aggiunge 30 minuti, dalle 18:00 ne aggiunge 60.
   function computePagaGiorno(entrata, uscita, cfg, isSaturday){
     var min = computeWorkedMinutes(entrata, uscita, cfg, isSaturday);
     if(min === null) return { worked:false, paga:0, penalizzato:false, penaleValore:0, penaleMinuti:0, paidMinutes:0 };
@@ -831,7 +835,8 @@
     var uscitaAnticipataMinuti = anticipoReale > 0
       ? (Math.floor(anticipoReale / scaglione) + 1) * scaglione
       : 0;
-    var straordinarioMinuti = Math.max(0, fine - finePrevista);
+    var straordinarioReale = Math.max(0, fine - finePrevista);
+    var straordinarioMinuti = Math.floor(straordinarioReale / scaglione) * scaglione;
     var penaleMinuti = ritardoMinuti + uscitaAnticipataMinuti;
     var paidMinutes = Math.max(0, standardMin - penaleMinuti + straordinarioMinuti);
     var paga = paidMinutes * tariffaMin;
@@ -1538,11 +1543,15 @@
       sheet.appendChild(tableTitle);
       var table = document.createElement("table");
       table.className = "print-table";
+      table.style.setProperty("--print-row-height", (222 / total).toFixed(3) + "mm");
       table.appendChild(normalHead.cloneNode(true));
       var body = document.createElement("tbody");
       rows.slice(range[0], range[1]).forEach(function(row){ body.appendChild(row.cloneNode(true)); });
       table.appendChild(body);
-      sheet.appendChild(table);
+      var tableWrap = document.createElement("div");
+      tableWrap.className = "print-table-wrap";
+      tableWrap.appendChild(table);
+      sheet.appendChild(tableWrap);
 
       if(pageIndex === ranges.length - 1){
         var rules = document.createElement("div");
@@ -1569,8 +1578,6 @@
 
   // ---- Aggiornamenti automatici ----
   var updateCheckRunning = false;
-  var updateDownloadRunning = false;
-  var updateReady = false;
   var lastAutomaticUpdateCheck = 0;
   var isMacOS = /Macintosh|Mac OS X/.test(navigator.userAgent);
 
@@ -1580,39 +1587,9 @@
     try{ return JSON.stringify(error); }catch(_error){ return String(error); }
   }
 
-  async function downloadAvailableUpdate(){
-    if(updateDownloadRunning || updateReady) return;
-    updateDownloadRunning = true;
-    el.btnInstallUpdate.disabled = true;
-    el.btnInstallUpdate.textContent = "Download…";
-    el.updateProgress.classList.add("visible");
-    el.updateProgressText.textContent = "Download automatico dell’aggiornamento in corso…";
-    try{
-      await nativeInvoke("download_update");
-      updateReady = true;
-      el.updateProgress.classList.remove("visible");
-      el.updateProgressText.textContent = "Aggiornamento scaricato e verificato. I dati resteranno invariati.";
-      el.btnInstallUpdate.disabled = false;
-      el.btnInstallUpdate.textContent = "Installa e riavvia";
-      el.updateStateText.textContent = "Aggiornamento pronto per l’installazione";
-    }catch(err){
-      console.error("Download automatico non riuscito", err);
-      el.updateProgress.classList.remove("visible");
-      el.updateProgressText.textContent = "Download automatico non riuscito: " + readableError(err);
-      el.btnInstallUpdate.disabled = false;
-      el.btnInstallUpdate.textContent = "Scarica e installa";
-    }finally{
-      updateDownloadRunning = false;
-    }
-  }
-
   async function checkForUpdates(manual){
     if(!nativeInvoke){
       if(manual) showToast("Gli aggiornamenti automatici sono disponibili nell’app installata");
-      return;
-    }
-    if(updateReady || updateDownloadRunning){
-      if(manual) el.updateOverlay.classList.remove("hidden");
       return;
     }
     if(updateCheckRunning) return;
@@ -1623,19 +1600,17 @@
     try{
       var info = await nativeInvoke("check_for_update");
       if(info){
-        updateReady = false;
         el.availableVersion.textContent = "v" + info.version;
         el.updateNotes.textContent = info.notes || "Miglioramenti e correzioni per Registro Presenze.";
-        el.updateProgress.classList.toggle("visible", !isMacOS);
+        el.updateProgress.classList.remove("visible");
         el.updateProgressText.textContent = isMacOS
           ? "Su Mac useremo l’installazione manuale sicura finché la correzione ufficiale di Tauri non sarà disponibile."
-          : "Preparazione del download automatico…";
-        el.btnInstallUpdate.disabled = !isMacOS;
-        el.btnInstallUpdate.textContent = isMacOS ? "Apri aggiornamento per Mac" : "Preparazione…";
+          : "Premi il pulsante per scaricare, verificare e installare automaticamente l’aggiornamento.";
+        el.btnInstallUpdate.disabled = false;
+        el.btnInstallUpdate.textContent = isMacOS ? "Apri aggiornamento per Mac" : "Scarica e installa";
         el.btnUpdateLater.disabled = false;
         el.updateOverlay.classList.remove("hidden");
         el.updateStateText.textContent = "Nuova versione disponibile: v" + info.version;
-        if(!isMacOS) downloadAvailableUpdate();
       }else{
         el.updateStateText.innerHTML = 'Versione installata: <span class="update-version">' + APP_VERSION + '</span> · aggiornata';
         if(manual) showToast("Hai già la versione più recente");
@@ -1672,9 +1647,9 @@
     }
     el.btnInstallUpdate.disabled = true;
     el.btnUpdateLater.disabled = true;
-    el.btnInstallUpdate.textContent = updateReady ? "Installazione e riavvio…" : "Download e installazione…";
+    el.btnInstallUpdate.textContent = "Download e installazione…";
     el.updateProgress.classList.add("visible");
-      el.updateProgressText.textContent = updateReady ? "Installazione in corso. L’app si riavvierà automaticamente." : "Download e installazione in corso. Non chiudere l’app.";
+    el.updateProgressText.textContent = "Download, verifica e installazione in corso. Non chiudere l’app.";
     try{
       await nativeSaveQueue.catch(function(){});
       await nativeInvoke("install_update");
@@ -1684,7 +1659,7 @@
       el.updateProgressText.textContent = "Aggiornamento non riuscito: " + readableError(err);
       el.btnInstallUpdate.disabled = false;
       el.btnUpdateLater.disabled = false;
-      el.btnInstallUpdate.textContent = updateReady ? "Riprova installazione" : "Riprova download";
+      el.btnInstallUpdate.textContent = "Riprova download e installazione";
     }
   });
 

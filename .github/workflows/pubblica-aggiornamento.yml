@@ -49,9 +49,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           retryAttempts: 3
-          tagName: registro-presenze-v1.4.1
-          releaseName: Registro Presenze v1.4.1
-          releaseBody: "Ripristinato l’orologio intelligente anche nei giorni nuovi: selezione separata di ore e minuti e passaggio automatico ai minuti dopo due cifre. Restano incluse la protezione dei saldi, la stampa A4 verticale, l’avvio Windows senza terminale, l’uscita anticipata e il conteggio ferie annuale. I dati e i backup personali restano invariati."
+          tagName: registro-presenze-v1.4.3
+          releaseName: Registro Presenze v1.4.3
+          releaseBody: "Corretto il calcolo dello straordinario: dopo le 17:00, e dopo le 13:00 del sabato, la paga aumenta soltanto al completamento di ogni scaglione di 30 minuti. Su Windows il pulsante Scarica e installa ora esegue download, verifica, installazione e riavvio in un unico passaggio automatico. I dati e i backup personali restano invariati."
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}

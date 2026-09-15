@@ -13,6 +13,10 @@ La versione 1.4.0 nasconde gli importi all’avvio: il pulsante **Mostra saldi**
 
 La versione 1.4.1 ripristina l’orologio intelligente anche nei giorni ancora vuoti: clicca sulle ore, digita due cifre e vengono selezionati automaticamente i minuti.
 
+La versione 1.4.2 distribuisce il tabulato mensile su tutta l’altezza disponibile del foglio A4 verticale, mantenendo il report completo in una sola pagina e rendendo i testi più leggibili.
+
+La versione 1.4.3 paga lo straordinario soltanto al completamento di ogni scaglione di 30 minuti: nei giorni feriali 17:01–17:29 non aggiunge nulla, 17:30–17:59 aggiunge 30 minuti e dalle 18:00 ne aggiunge 60; il sabato applica la stessa regola dopo le 13:00. Su Windows **Scarica e installa** esegue download, verifica, installazione e riavvio in un unico passaggio automatico.
+
 ## Fase A — preparare il Mac di Vigi
 
 Questa preparazione si esegue una sola volta sul Mac usato per creare la versione Mac.
