@@ -23,6 +23,8 @@ La versione 1.4.5 introduce un percorso di aggiornamento Windows indipendente da
 
 La versione 1.4.6 corregge i confini dell’uscita anticipata: timbrare esattamente alle 16:30 assegna già la mezz’ora 16:00–16:30 e produce 7h 45m retribuite; alle 16:00 risultano 7h 15m. Serve anche come prima prova reale dell’aggiornamento automatico dalla versione Windows 1.4.5.
 
+La versione 1.4.7 corregge il manifesto Windows aggiungendo i target `windows` e `windows-x86_64-nsis`, oltre a `windows-x86_64`. L’app individua inoltre i dati dell’installer anche tramite il suo URL e conserva l’aggiornamento dopo un errore, permettendo al pulsante **Riprova** di funzionare senza dover chiudere l’app.
+
 ## Fase A — preparare il Mac di Vigi
 
 Questa preparazione si esegue una sola volta sul Mac usato per creare la versione Mac.

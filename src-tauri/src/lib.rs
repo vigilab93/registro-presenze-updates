@@ -362,12 +362,13 @@ async fn install_update(
     pending_update: tauri::State<'_, PendingUpdate>,
 ) -> Result<(), String> {
     let update = {
-        let mut pending = pending_update
+        let pending = pending_update
             .0
             .lock()
             .map_err(|_| "Impossibile aprire l'aggiornamento".to_string())?;
         pending
-            .take()
+            .as_ref()
+            .cloned()
             .ok_or_else(|| "Nessun aggiornamento pronto da installare".to_string())?
     };
 
@@ -376,10 +377,19 @@ async fn install_update(
         use std::os::windows::process::CommandExt;
 
         const CREATE_NO_WINDOW: u32 = 0x08000000;
+        let download_url = update.download_url.to_string();
         let platform = update
             .raw_json
             .get("platforms")
-            .and_then(|platforms| platforms.get(update.target.as_str()))
+            .and_then(Value::as_object)
+            .and_then(|platforms| {
+                platforms.get(update.target.as_str()).or_else(|| {
+                    platforms.values().find(|candidate| {
+                        candidate.get("url").and_then(Value::as_str)
+                            == Some(download_url.as_str())
+                    })
+                })
+            })
             .ok_or_else(|| "Dati dell'aggiornamento Windows incompleti".to_string())?;
         let expected_sha256 = platform
             .get("sha256")
@@ -387,7 +397,6 @@ async fn install_update(
             .filter(|hash| hash.len() == 64 && hash.chars().all(|c| c.is_ascii_hexdigit()))
             .ok_or_else(|| "Controllo di integrità SHA-256 mancante".to_string())?
             .to_ascii_lowercase();
-        let download_url = update.download_url.to_string();
         let safe_version: String = update
             .version
             .chars()
