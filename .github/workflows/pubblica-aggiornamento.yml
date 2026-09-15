@@ -49,9 +49,99 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           retryAttempts: 3
-          tagName: registro-presenze-v1.4.3
-          releaseName: Registro Presenze v1.4.3
-          releaseBody: "Corretto il calcolo dello straordinario: dopo le 17:00, e dopo le 13:00 del sabato, la paga aumenta soltanto al completamento di ogni scaglione di 30 minuti. Su Windows il pulsante Scarica e installa ora esegue download, verifica, installazione e riavvio in un unico passaggio automatico. I dati e i backup personali restano invariati."
+          tagName: registro-presenze-v1.4.4
+          releaseName: Registro Presenze v1.4.4
+          releaseBody: "Corretto definitivamente l’aggiornamento automatico su Windows: Scarica e installa usa ora il collegamento diretto all’installer firmato, lo verifica, lo installa e riavvia l’app. Restano inclusi il calcolo dello straordinario a scaglioni completi di 30 minuti e tutte le funzioni precedenti. I dati e i backup personali restano invariati."
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+
+  correggi-indirizzi-aggiornamento:
+    name: Prepara aggiornamento automatico
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RELEASE_TAG: registro-presenze-v1.4.4
+      RELEASE_VERSION: 1.4.4
+    steps:
+      - name: Crea latest.json con i collegamenti diretti
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          assets_json="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" --jq '.assets')"
+          release_json="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}")"
+
+          find_asset() {
+            local suffix="$1"
+            printf '%s' "$assets_json" | jq -c --arg suffix "$suffix" \
+              '[.[] | select(.name | endswith($suffix))][0]'
+          }
+
+          arm_asset="$(find_asset '_aarch64.app.tar.gz')"
+          intel_asset="$(find_asset '_x64.app.tar.gz')"
+          windows_asset="$(find_asset '_x64-setup.exe')"
+
+          for asset in "$arm_asset" "$intel_asset" "$windows_asset"; do
+            if [[ "$asset" == "null" || -z "$asset" ]]; then
+              echo "Manca uno dei pacchetti necessari nella release ${RELEASE_TAG}." >&2
+              exit 1
+            fi
+          done
+
+          read_signature() {
+            local package_name="$1"
+            local signature_id
+            signature_id="$(printf '%s' "$assets_json" | jq -r --arg name "${package_name}.sig" \
+              '[.[] | select(.name == $name)][0].id // empty')"
+            if [[ -z "$signature_id" ]]; then
+              echo "Firma mancante per ${package_name}." >&2
+              exit 1
+            fi
+            gh api -H 'Accept: application/octet-stream' \
+              "repos/${GITHUB_REPOSITORY}/releases/assets/${signature_id}"
+          }
+
+          arm_name="$(printf '%s' "$arm_asset" | jq -r '.name')"
+          intel_name="$(printf '%s' "$intel_asset" | jq -r '.name')"
+          windows_name="$(printf '%s' "$windows_asset" | jq -r '.name')"
+          arm_url="$(printf '%s' "$arm_asset" | jq -r '.browser_download_url')"
+          intel_url="$(printf '%s' "$intel_asset" | jq -r '.browser_download_url')"
+          windows_url="$(printf '%s' "$windows_asset" | jq -r '.browser_download_url')"
+          arm_signature="$(read_signature "$arm_name")"
+          intel_signature="$(read_signature "$intel_name")"
+          windows_signature="$(read_signature "$windows_name")"
+          release_notes="$(printf '%s' "$release_json" | jq -r '.body // ""')"
+          published_at="$(printf '%s' "$release_json" | jq -r '.published_at')"
+
+          jq -n \
+            --arg version "$RELEASE_VERSION" \
+            --arg notes "$release_notes" \
+            --arg pub_date "$published_at" \
+            --arg arm_url "$arm_url" \
+            --arg arm_signature "$arm_signature" \
+            --arg intel_url "$intel_url" \
+            --arg intel_signature "$intel_signature" \
+            --arg windows_url "$windows_url" \
+            --arg windows_signature "$windows_signature" \
+            '{
+              version: $version,
+              notes: $notes,
+              pub_date: $pub_date,
+              platforms: {
+                "darwin-aarch64": { signature: $arm_signature, url: $arm_url },
+                "darwin-x86_64": { signature: $intel_signature, url: $intel_url },
+                "windows-x86_64": { signature: $windows_signature, url: $windows_url }
+              }
+            }' > latest.json
+
+          jq -e '
+            .platforms
+            | to_entries
+            | length == 3 and all(.value.url | startswith("https://github.com/"))
+          ' latest.json >/dev/null
+
+          gh release upload "$RELEASE_TAG" latest.json --clobber --repo "$GITHUB_REPOSITORY"

@@ -17,6 +17,8 @@ La versione 1.4.2 distribuisce il tabulato mensile su tutta l’altezza disponib
 
 La versione 1.4.3 paga lo straordinario soltanto al completamento di ogni scaglione di 30 minuti: nei giorni feriali 17:01–17:29 non aggiunge nulla, 17:30–17:59 aggiunge 30 minuti e dalle 18:00 ne aggiunge 60; il sabato applica la stessa regola dopo le 13:00. Su Windows **Scarica e installa** esegue download, verifica, installazione e riavvio in un unico passaggio automatico.
 
+La versione 1.4.4 corregge la pubblicazione dell’aggiornamento Windows. Al termine delle compilazioni, GitHub prepara nuovamente `latest.json` usando i collegamenti diretti agli installer e le firme abbinate ai rispettivi file. In questo modo **Scarica e installa** riceve il vero installer Windows, ne verifica la firma e lo installa automaticamente.
+
 ## Fase A — preparare il Mac di Vigi
 
 Questa preparazione si esegue una sola volta sul Mac usato per creare la versione Mac.

@@ -1,6 +1,6 @@
 [package]
 name = "registro-presenze"
-version = "1.4.3"
+version = "1.4.4"
 description = "Registro presenze multipiattaforma"
 authors = ["Vigi"]
 edition = "2021"
