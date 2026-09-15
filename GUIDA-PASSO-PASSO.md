@@ -11,6 +11,8 @@ La versione 1.1.0 introduce gli aggiornamenti firmati. Dalla versione 1.3.0 l’
 
 La versione 1.4.0 nasconde gli importi all’avvio: il pulsante **Mostra saldi** li mostra o li nasconde insieme nell’app e nel report di stampa. Aggiunge inoltre il conteggio delle ferie godute nell’anno, consente di registrare in anticipo l’orario di uscita e forza il report mensile su una sola pagina A4 verticale. Su Windows l’app si avvia senza aprire una finestra del terminale.
 
+La versione 1.4.1 ripristina l’orologio intelligente anche nei giorni ancora vuoti: clicca sulle ore, digita due cifre e vengono selezionati automaticamente i minuti.
+
 ## Fase A — preparare il Mac di Vigi
 
 Questa preparazione si esegue una sola volta sul Mac usato per creare la versione Mac.

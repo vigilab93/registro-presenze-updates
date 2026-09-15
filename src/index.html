@@ -553,7 +553,7 @@
 
     <div class="modal-subhead">Aggiornamenti</div>
     <div class="update-card">
-      <p id="updateStateText">Versione installata: <span class="update-version">1.4.0</span></p>
+      <p id="updateStateText">Versione installata: <span class="update-version">1.4.1</span></p>
       <button class="btn-ghost" id="btnCheckUpdates">Controlla aggiornamenti</button>
     </div>
 
@@ -598,7 +598,7 @@
   var GIORNI_BREVI = ["L","M","M","G","V","S","D"]; // header, Monday-first
   var LS_ENTRIES = "registroOrari.entries";
   var LS_CONFIG = "registroOrari.config";
-  var APP_VERSION = "1.4.0";
+  var APP_VERSION = "1.4.1";
   var nativeInvoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke
     ? window.__TAURI__.core.invoke
     : null;
@@ -637,6 +637,12 @@
     var bufferSegment = "";
     var originalSegment = "00";
 
+    function seedClockForEditing(){
+      if(isValidClock(input.value)) return;
+      input.value = isValidClock(input.placeholder) ? input.placeholder : "00:00";
+      input.dataset.smartTemporary = "true";
+    }
+
     function parts(){
       return isValidClock(input.value) ? input.value.split(":") : ["00", "00"];
     }
@@ -653,9 +659,12 @@
 
     input.addEventListener("focus", function(){
       input.dataset.smartBaseline = input.value;
+      input.dataset.smartDirty = "false";
+      seedClockForEditing();
       selectTimeSegment(input, "hours");
     });
     input.addEventListener("click", function(){
+      seedClockForEditing();
       selectTimeSegment(input, (input.selectionStart || 0) >= 3 ? "minutes" : "hours");
       digitBuffer = "";
       bufferSegment = "";
@@ -671,6 +680,7 @@
           originalSegment = current[segment === "minutes" ? 1 : 0];
         }
         digitBuffer = (digitBuffer + event.key).slice(-2);
+        input.dataset.smartTemporary = "false";
         replaceSegment(segment, digitBuffer.padStart(2, "0"));
         selectTimeSegment(input, segment);
         if(digitBuffer.length === 2){
@@ -722,6 +732,7 @@
       if(!isValidClock(candidate)) return;
       event.preventDefault();
       input.value = candidate;
+      input.dataset.smartTemporary = "false";
       input.dataset.smartDirty = "true";
       input.dispatchEvent(new Event("input", { bubbles:true }));
       selectTimeSegment(input, "minutes");
@@ -732,7 +743,10 @@
       if(input.dataset.smartDirty === "true"){
         input.dataset.smartDirty = "false";
         input.dispatchEvent(new Event("change", { bubbles:true }));
+      } else if(input.dataset.smartTemporary === "true"){
+        input.value = input.dataset.smartBaseline || "";
       }
+      input.dataset.smartTemporary = "false";
     });
   }
   function minutesToLabel(min){
