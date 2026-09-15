@@ -49,9 +49,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           retryAttempts: 3
-          tagName: registro-presenze-v1.4.0
-          releaseName: Registro Presenze v1.4.0
-          releaseBody: "Saldi nascosti con comando Mostra saldi; report A4 verticale anche su Windows; terminale Windows nascosto; uscita futura inseribile; contatore annuale delle ferie. I dati e i backup personali restano invariati."
+          tagName: registro-presenze-v1.4.1
+          releaseName: Registro Presenze v1.4.1
+          releaseBody: "Ripristinato l’orologio intelligente anche nei giorni nuovi: selezione separata di ore e minuti e passaggio automatico ai minuti dopo due cifre. Restano incluse la protezione dei saldi, la stampa A4 verticale, l’avvio Windows senza terminale, l’uscita anticipata e il conteggio ferie annuale. I dati e i backup personali restano invariati."
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
