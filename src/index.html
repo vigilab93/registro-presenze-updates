@@ -486,7 +486,7 @@
         </table>
       </div>
       <div style="font-size:11.5px;color:var(--ink-soft);margin-top:10px;">Le 08:30 sono comprese nella tolleranza. Dalle 08:31 scatta −30 min; alle 09:00 −60 min; alle 09:30 −90 min e così via.</div>
-      <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Anche l’uscita anticipata segue scaglioni di 30 minuti: dalle 16:31 alle 16:59 −30 min; dalle 16:01 alle 16:30 −60 min; dalle 15:31 alle 16:00 −90 min.</div>
+      <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Anche l’uscita anticipata segue scaglioni di 30 minuti completati: dalle 16:30 alle 16:59 −30 min; dalle 16:00 alle 16:29 −60 min; dalle 15:30 alle 15:59 −90 min.</div>
       <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Il sabato 08:00–13:00 e il sabato di ferie valgono una giornata intera. Il lavoro dopo le 13:00 è straordinario pagato alla tariffa normale, senza pausa.</div>
     </section>
 
@@ -556,7 +556,7 @@
 
     <div class="modal-subhead">Aggiornamenti</div>
     <div class="update-card">
-      <p id="updateStateText">Versione installata: <span class="update-version">1.4.5</span></p>
+      <p id="updateStateText">Versione installata: <span class="update-version">1.4.6</span></p>
       <button class="btn-ghost" id="btnCheckUpdates">Controlla aggiornamenti</button>
     </div>
 
@@ -601,7 +601,7 @@
   var GIORNI_BREVI = ["L","M","M","G","V","S","D"]; // header, Monday-first
   var LS_ENTRIES = "registroOrari.entries";
   var LS_CONFIG = "registroOrari.config";
-  var APP_VERSION = "1.4.5";
+  var APP_VERSION = "1.4.6";
   var nativeInvoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke
     ? window.__TAURI__.core.invoke
     : null;
@@ -814,7 +814,8 @@
   }
 
   // Calcolo retribuzione: entro la tolleranza l'inizio pagato resta 08:15.
-  // Le decurtazioni scattano appena inizia uno scaglione di ritardo/uscita anticipata.
+  // Il ritardo scatta all'inizio di ogni nuovo scaglione; per l'uscita anticipata
+  // ogni :00 e :30 conta invece come mezz'ora già completata (es. 16:30 = -30 min).
   // Lo straordinario, invece, viene pagato solo per scaglioni completati: 17:01–17:29
   // non aggiunge nulla, 17:30–17:59 aggiunge 30 minuti, dalle 18:00 ne aggiunge 60.
   function computePagaGiorno(entrata, uscita, cfg, isSaturday){
@@ -833,7 +834,7 @@
       anticipoReale = Math.max(0, anticipoReale - breakOverlapMinutes(fine, finePrevista, cfg));
     }
     var uscitaAnticipataMinuti = anticipoReale > 0
-      ? (Math.floor(anticipoReale / scaglione) + 1) * scaglione
+      ? Math.ceil(anticipoReale / scaglione) * scaglione
       : 0;
     var straordinarioReale = Math.max(0, fine - finePrevista);
     var straordinarioMinuti = Math.floor(straordinarioReale / scaglione) * scaglione;
@@ -1556,7 +1557,7 @@
       if(pageIndex === ranges.length - 1){
         var rules = document.createElement("div");
         rules.className = "print-rules";
-        rules.textContent = "Entrata: le 08:30 sono comprese nella tolleranza; dalle 08:31 scatta −30 min, alle 09:00 −60 min e così via. Uscita: 16:31–16:59 −30 min; 16:01–16:30 −60 min; 15:31–16:00 −90 min. Il sabato 08:00–13:00 e il sabato di ferie valgono una giornata intera; il lavoro dopo le 13:00 è straordinario alla tariffa normale, senza pausa.";
+        rules.textContent = "Entrata: le 08:30 sono comprese nella tolleranza; dalle 08:31 scatta −30 min, alle 09:00 −60 min e così via. Uscita: 16:30–16:59 −30 min; 16:00–16:29 −60 min; 15:30–15:59 −90 min. Il sabato 08:00–13:00 e il sabato di ferie valgono una giornata intera; il lavoro dopo le 13:00 è straordinario alla tariffa normale, senza pausa.";
         sheet.appendChild(rules);
       }
       el.printReport.appendChild(sheet);

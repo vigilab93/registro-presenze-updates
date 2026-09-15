@@ -21,6 +21,8 @@ La versione 1.4.4 corregge la pubblicazione dell’aggiornamento Windows. Al ter
 
 La versione 1.4.5 introduce un percorso di aggiornamento Windows indipendente dalla firma Tauri che ha dato errore nelle release precedenti. L’app scarica direttamente l’installer NSIS, confronta la sua impronta SHA-256 con quella calcolata da GitHub durante la pubblicazione e, se coincide, lo avvia con i parametri ufficiali di aggiornamento `/P /UPDATE /R`.
 
+La versione 1.4.6 corregge i confini dell’uscita anticipata: timbrare esattamente alle 16:30 assegna già la mezz’ora 16:00–16:30 e produce 7h 45m retribuite; alle 16:00 risultano 7h 15m. Serve anche come prima prova reale dell’aggiornamento automatico dalla versione Windows 1.4.5.
+
 ## Fase A — preparare il Mac di Vigi
 
 Questa preparazione si esegue una sola volta sul Mac usato per creare la versione Mac.

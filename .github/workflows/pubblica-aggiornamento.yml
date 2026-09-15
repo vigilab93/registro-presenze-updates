@@ -49,9 +49,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           retryAttempts: 3
-          tagName: registro-presenze-v1.4.5
-          releaseName: Registro Presenze v1.4.5
-          releaseBody: "Nuovo sistema di aggiornamento Windows: Scarica e installa preleva direttamente l’installer NSIS, ne controlla l’impronta SHA-256 e avvia automaticamente la sostituzione della versione precedente e il riavvio. Restano inclusi il calcolo dello straordinario a scaglioni completi di 30 minuti e tutte le funzioni precedenti. I dati e i backup personali restano invariati."
+          tagName: registro-presenze-v1.4.6
+          releaseName: Registro Presenze v1.4.6
+          releaseBody: "Corretti i confini degli scaglioni di uscita anticipata: alle 16:30 risultano già completate e pagate 7h 45m; alle 16:00 risultano 7h 15m. Questa versione permette inoltre di verificare il nuovo aggiornamento automatico Windows introdotto nella 1.4.5. I dati e i backup personali restano invariati."
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
@@ -64,8 +64,8 @@ jobs:
       contents: write
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      RELEASE_TAG: registro-presenze-v1.4.5
-      RELEASE_VERSION: 1.4.5
+      RELEASE_TAG: registro-presenze-v1.4.6
+      RELEASE_VERSION: 1.4.6
     steps:
       - name: Crea latest.json con i collegamenti diretti
         shell: bash
