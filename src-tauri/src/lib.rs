@@ -371,22 +371,148 @@ async fn install_update(
             .ok_or_else(|| "Nessun aggiornamento pronto da installare".to_string())?
     };
 
-    let install_result = update
-        .download_and_install(|_, _| {}, || {})
-        .await;
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
 
-    if let Err(error) = install_result {
-        let mut pending = pending_update
-            .0
-            .lock()
-            .map_err(|_| format!("Installazione non riuscita: {error}"))?;
-        *pending = Some(update);
-        return Err(format!("Installazione non riuscita: {error}"));
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        let platform = update
+            .raw_json
+            .get("platforms")
+            .and_then(|platforms| platforms.get(update.target.as_str()))
+            .ok_or_else(|| "Dati dell'aggiornamento Windows incompleti".to_string())?;
+        let expected_sha256 = platform
+            .get("sha256")
+            .and_then(Value::as_str)
+            .filter(|hash| hash.len() == 64 && hash.chars().all(|c| c.is_ascii_hexdigit()))
+            .ok_or_else(|| "Controllo di integrità SHA-256 mancante".to_string())?
+            .to_ascii_lowercase();
+        let download_url = update.download_url.to_string();
+        let safe_version: String = update
+            .version
+            .chars()
+            .filter(|character| character.is_ascii_alphanumeric() || *character == '.')
+            .collect();
+        let installer_path = std::env::temp_dir().join(format!(
+            "Registro-Presenze-{safe_version}-aggiornamento.exe"
+        ));
+        let powershell_script = r#"
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+Invoke-WebRequest -UseBasicParsing -Uri $env:RP_UPDATE_URL -OutFile $env:RP_UPDATE_PATH
+$actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $env:RP_UPDATE_PATH).Hash.ToLowerInvariant()
+$expected = $env:RP_UPDATE_SHA256.ToLowerInvariant()
+if ($actual -ne $expected) {
+  Remove-Item -LiteralPath $env:RP_UPDATE_PATH -Force -ErrorAction SilentlyContinue
+  throw "Il file scaricato non supera il controllo SHA-256"
+}
+"#;
+
+        let download_result = Command::new("powershell.exe")
+            .args([
+                "-NoLogo",
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                powershell_script,
+            ])
+            .env("RP_UPDATE_URL", &download_url)
+            .env("RP_UPDATE_PATH", &installer_path)
+            .env("RP_UPDATE_SHA256", &expected_sha256)
+            .creation_flags(CREATE_NO_WINDOW)
+            .output();
+
+        match download_result {
+            Ok(output) if output.status.success() => {}
+            Ok(output) => {
+                let details = String::from_utf8_lossy(&output.stderr).trim().to_string();
+                let mut pending = pending_update.0.lock().map_err(|_| {
+                    "Download non riuscito e aggiornamento non recuperabile".to_string()
+                })?;
+                *pending = Some(update);
+                return Err(if details.is_empty() {
+                    "Download o controllo di integrità non riuscito".to_string()
+                } else {
+                    format!("Download o controllo di integrità non riuscito: {details}")
+                });
+            }
+            Err(error) => {
+                let mut pending = pending_update.0.lock().map_err(|_| {
+                    "Download non riuscito e aggiornamento non recuperabile".to_string()
+                })?;
+                *pending = Some(update);
+                return Err(format!("Impossibile avviare il download Windows: {error}"));
+            }
+        }
+
+        if !installer_path.is_file() {
+            let mut pending = pending_update.0.lock().map_err(|_| {
+                "Installer non trovato e aggiornamento non recuperabile".to_string()
+            })?;
+            *pending = Some(update);
+            return Err("Il download è terminato ma l'installer non è stato trovato".to_string());
+        }
+
+        let launch_result = Command::new("powershell.exe")
+            .args([
+                "-NoLogo",
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "Start-Process -FilePath $env:RP_UPDATE_PATH -ArgumentList @('/P','/UPDATE','/R')",
+            ])
+            .env("RP_UPDATE_PATH", &installer_path)
+            .creation_flags(CREATE_NO_WINDOW)
+            .output();
+
+        match launch_result {
+            Ok(output) if output.status.success() => {
+                app.exit(0);
+                Ok(())
+            }
+            Ok(output) => {
+                let details = String::from_utf8_lossy(&output.stderr).trim().to_string();
+                let mut pending = pending_update.0.lock().map_err(|_| {
+                    "Installer non avviato e aggiornamento non recuperabile".to_string()
+                })?;
+                *pending = Some(update);
+                Err(if details.is_empty() {
+                    "Windows non ha avviato l'installer dell'aggiornamento".to_string()
+                } else {
+                    format!("Windows non ha avviato l'installer: {details}")
+                })
+            }
+            Err(error) => {
+                let mut pending = pending_update.0.lock().map_err(|_| {
+                    "Installer non avviato e aggiornamento non recuperabile".to_string()
+                })?;
+                *pending = Some(update);
+                Err(format!("Impossibile avviare PowerShell per l'aggiornamento: {error}"))
+            }
+        }
     }
 
-    app.restart();
-    #[allow(unreachable_code)]
-    Ok(())
+    #[cfg(not(target_os = "windows"))]
+    {
+        let install_result = update.download_and_install(|_, _| {}, || {}).await;
+
+        if let Err(error) = install_result {
+            let mut pending = pending_update
+                .0
+                .lock()
+                .map_err(|_| format!("Installazione non riuscita: {error}"))?;
+            *pending = Some(update);
+            return Err(format!("Installazione non riuscita: {error}"));
+        }
+
+        app.restart();
+        #[allow(unreachable_code)]
+        Ok(())
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

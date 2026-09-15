@@ -49,9 +49,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           retryAttempts: 3
-          tagName: registro-presenze-v1.4.4
-          releaseName: Registro Presenze v1.4.4
-          releaseBody: "Corretto definitivamente l’aggiornamento automatico su Windows: Scarica e installa usa ora il collegamento diretto all’installer firmato, lo verifica, lo installa e riavvia l’app. Restano inclusi il calcolo dello straordinario a scaglioni completi di 30 minuti e tutte le funzioni precedenti. I dati e i backup personali restano invariati."
+          tagName: registro-presenze-v1.4.5
+          releaseName: Registro Presenze v1.4.5
+          releaseBody: "Nuovo sistema di aggiornamento Windows: Scarica e installa preleva direttamente l’installer NSIS, ne controlla l’impronta SHA-256 e avvia automaticamente la sostituzione della versione precedente e il riavvio. Restano inclusi il calcolo dello straordinario a scaglioni completi di 30 minuti e tutte le funzioni precedenti. I dati e i backup personali restano invariati."
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
@@ -64,8 +64,8 @@ jobs:
       contents: write
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      RELEASE_TAG: registro-presenze-v1.4.4
-      RELEASE_VERSION: 1.4.4
+      RELEASE_TAG: registro-presenze-v1.4.5
+      RELEASE_VERSION: 1.4.5
     steps:
       - name: Crea latest.json con i collegamenti diretti
         shell: bash
@@ -114,6 +114,10 @@ jobs:
           arm_signature="$(read_signature "$arm_name")"
           intel_signature="$(read_signature "$intel_name")"
           windows_signature="$(read_signature "$windows_name")"
+          mkdir -p windows-installer
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern "$windows_name" --dir windows-installer
+          windows_sha256="$(sha256sum "windows-installer/$windows_name" | cut -d ' ' -f 1)"
           release_notes="$(printf '%s' "$release_json" | jq -r '.body // ""')"
           published_at="$(printf '%s' "$release_json" | jq -r '.published_at')"
 
@@ -127,6 +131,7 @@ jobs:
             --arg intel_signature "$intel_signature" \
             --arg windows_url "$windows_url" \
             --arg windows_signature "$windows_signature" \
+            --arg windows_sha256 "$windows_sha256" \
             '{
               version: $version,
               notes: $notes,
@@ -134,14 +139,20 @@ jobs:
               platforms: {
                 "darwin-aarch64": { signature: $arm_signature, url: $arm_url },
                 "darwin-x86_64": { signature: $intel_signature, url: $intel_url },
-                "windows-x86_64": { signature: $windows_signature, url: $windows_url }
+                "windows-x86_64": {
+                  signature: $windows_signature,
+                  url: $windows_url,
+                  sha256: $windows_sha256
+                }
               }
             }' > latest.json
 
           jq -e '
             .platforms
             | to_entries
-            | length == 3 and all(.value.url | startswith("https://github.com/"))
+            | (length == 3)
+              and all(.value.url | startswith("https://github.com/"))
+              and (map(select(.key == "windows-x86_64"))[0].value.sha256 | length == 64)
           ' latest.json >/dev/null
 
           gh release upload "$RELEASE_TAG" latest.json --clobber --repo "$GITHUB_REPOSITORY"

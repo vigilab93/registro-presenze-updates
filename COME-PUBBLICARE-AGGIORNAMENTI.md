@@ -17,7 +17,9 @@ Il workflow GitHub compila automaticamente tre installer:
 - macOS Intel;
 - Windows a 64 bit.
 
-Al termine crea una Release pubblica con il file `latest.json` e gli installer firmati. Le copie già installate di Registro Presenze leggono quel file, mostrano l’avviso e installano l’aggiornamento soltanto dopo la conferma dell’utente.
+Al termine crea una Release pubblica con il file `latest.json` e gli installer. Il workflow calcola anche l’impronta SHA-256 dell’installer Windows e la inserisce nel manifesto. Le copie già installate di Registro Presenze leggono quel file, mostrano l’avviso e installano l’aggiornamento soltanto dopo la conferma dell’utente.
+
+La versione Windows 1.4.5 va installata manualmente una sola volta perché le versioni precedenti contengono ancora il vecchio updater. Dalla 1.4.5 in poi, **Scarica e installa** scarica l’installer, ne controlla l’impronta e lo avvia automaticamente senza aprire il terminale.
 
 ## Dati degli utenti
 

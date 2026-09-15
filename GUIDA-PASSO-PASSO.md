@@ -19,6 +19,8 @@ La versione 1.4.3 paga lo straordinario soltanto al completamento di ogni scagli
 
 La versione 1.4.4 corregge la pubblicazione dell’aggiornamento Windows. Al termine delle compilazioni, GitHub prepara nuovamente `latest.json` usando i collegamenti diretti agli installer e le firme abbinate ai rispettivi file. In questo modo **Scarica e installa** riceve il vero installer Windows, ne verifica la firma e lo installa automaticamente.
 
+La versione 1.4.5 introduce un percorso di aggiornamento Windows indipendente dalla firma Tauri che ha dato errore nelle release precedenti. L’app scarica direttamente l’installer NSIS, confronta la sua impronta SHA-256 con quella calcolata da GitHub durante la pubblicazione e, se coincide, lo avvia con i parametri ufficiali di aggiornamento `/P /UPDATE /R`.
+
 ## Fase A — preparare il Mac di Vigi
 
 Questa preparazione si esegue una sola volta sul Mac usato per creare la versione Mac.
@@ -131,9 +133,13 @@ Se l’archivio principale è danneggiato o assente, all’avvio l’app tenta a
 
 - L’app controlla automaticamente gli aggiornamenti dopo l’avvio.
 - Il controllo manuale si trova in **Impostazioni → Aggiornamenti**.
-- Quando trova una nuova versione, l’app la scarica e la verifica automaticamente in background.
-- L’utente può scegliere **Più tardi** oppure **Installa e riavvia**.
+- Quando trova una nuova versione, l’utente può scegliere **Più tardi** oppure **Scarica e installa**.
+- Su Windows l’app scarica l’installer senza aprire il terminale, verifica l’impronta SHA-256 pubblicata da GitHub e avvia automaticamente l’installazione e il riavvio.
+- Su macOS resta attiva la verifica con la chiave di firma dell’aggiornamento.
 - Database, impostazioni e backup non vengono sostituiti dall’aggiornamento.
-- Gli aggiornamenti vengono accettati soltanto se firmati con la chiave privata originale.
+
+### Passaggio iniziale per Windows 1.4.5
+
+Le versioni Windows fino alla 1.4.4 contengono ancora il vecchio percorso Tauri che termina con l’errore **The signature verification failed**. Perciò la 1.4.5 deve essere installata manualmente una sola volta scaricando dalla Release il file `Registro.Presenze_1.4.5_x64-setup.exe`. Dalla versione 1.4.5 in poi, gli aggiornamenti successivi useranno il nuovo pulsante automatico direttamente nell’app.
 
 La chiave privata attiva si trova sul Mac di Vigi in `~/.registro-presenze/registro-presenze-v2.key`. Non deve essere caricata nel repository o passata ai colleghi. Anche la password deve essere conservata separatamente.
