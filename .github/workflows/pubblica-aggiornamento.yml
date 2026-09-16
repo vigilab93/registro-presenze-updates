@@ -49,9 +49,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           retryAttempts: 3
-          tagName: registro-presenze-v1.4.7
-          releaseName: Registro Presenze v1.4.7
-          releaseBody: "Corretto il manifesto dell’aggiornamento automatico Windows: la versione installata trova ora correttamente URL e impronta SHA-256, scarica l’installer e lo avvia. Il pulsante Riprova mantiene inoltre disponibile l’aggiornamento dopo un errore. Restano inclusi gli scaglioni corretti della 1.4.6. I dati e i backup personali restano invariati."
+          tagName: registro-presenze-v1.4.8
+          releaseName: Registro Presenze v1.4.8
+          releaseBody: "Aggiunto il contatore mensile delle ore straordinarie: comprende gli scaglioni completati dopo le 17:00 nei feriali, dopo le 13:00 del sabato e tutte le ore lavorate di domenica. Lo straordinario è conteggiato anche nelle ore effettive, pagato alla tariffa oraria normale e riportato nel PDF e nel CSV. I dati e i backup personali restano invariati."
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
@@ -64,8 +64,8 @@ jobs:
       contents: write
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      RELEASE_TAG: registro-presenze-v1.4.7
-      RELEASE_VERSION: 1.4.7
+      RELEASE_TAG: registro-presenze-v1.4.8
+      RELEASE_VERSION: 1.4.8
     steps:
       - name: Crea latest.json con i collegamenti diretti
         shell: bash

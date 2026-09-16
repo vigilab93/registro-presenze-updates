@@ -25,6 +25,8 @@ La versione 1.4.6 corregge i confini dell’uscita anticipata: timbrare esattame
 
 La versione 1.4.7 corregge il manifesto Windows aggiungendo i target `windows` e `windows-x86_64-nsis`, oltre a `windows-x86_64`. L’app individua inoltre i dati dell’installer anche tramite il suo URL e conserva l’aggiornamento dopo un errore, permettendo al pulsante **Riprova** di funzionare senza dover chiudere l’app.
 
+La versione 1.4.8 aggiunge il contatore mensile delle **ore straordinarie** nel riepilogo dell’app e nel report. Comprende gli scaglioni completi dopo le 17:00 nei feriali, dopo le 13:00 del sabato e tutte le ore lavorate la domenica. Queste ore restano incluse anche nelle ore effettive e sono pagate alla normale tariffa oraria; il dettaglio giornaliero è incluso nel CSV.
+
 ## Fase A — preparare il Mac di Vigi
 
 Questa preparazione si esegue una sola volta sul Mac usato per creare la versione Mac.

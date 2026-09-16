@@ -51,7 +51,7 @@
     .print-title{font-size:15px;font-weight:700;}
     .print-month{font:10px var(--font-mono);color:#726A57;margin-top:2px;}
     .print-page-number{font-size:8px;color:#726A57;}
-    .print-summary{flex:none;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:7px;}
+    .print-summary{flex:none;display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:7px;}
     .print-stat{border:1px solid #D9CFAF;border-radius:5px;padding:5px 7px;background:#FBF8EE;}
     .print-stat-label{font-size:7.5px;color:#726A57;margin-bottom:2px;}
     .print-stat-value{font:700 11px var(--font-mono);}
@@ -273,7 +273,7 @@
   .cal-cell.is-selected .dot{background:var(--paper);}
 
   /* Summary */
-  .summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+  .summary-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;}
   @media (max-width:980px){.summary-grid{grid-template-columns:repeat(3,1fr);}}
   @media (max-width:700px){.summary-grid{grid-template-columns:repeat(2,1fr);}}
   .stat{
@@ -452,6 +452,11 @@
           <div class="value" id="statOre">0h 00m</div>
         </div>
         <div class="stat">
+          <div class="label">Ore straordinarie</div>
+          <div class="value" id="statStraordinario">0h 00m</div>
+          <div class="sub">scaglioni pagati nel mese</div>
+        </div>
+        <div class="stat">
           <div class="label">Ferie godute nell’anno</div>
           <div class="value" id="statFerieAnno">0</div>
           <div class="sub" id="statFerieAnnoSub">anno corrente</div>
@@ -487,7 +492,7 @@
       </div>
       <div style="font-size:11.5px;color:var(--ink-soft);margin-top:10px;">Le 08:30 sono comprese nella tolleranza. Dalle 08:31 scatta −30 min; alle 09:00 −60 min; alle 09:30 −90 min e così via.</div>
       <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Anche l’uscita anticipata segue scaglioni di 30 minuti completati: dalle 16:30 alle 16:59 −30 min; dalle 16:00 alle 16:29 −60 min; dalle 15:30 alle 15:59 −90 min.</div>
-      <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Il sabato 08:00–13:00 e il sabato di ferie valgono una giornata intera. Il lavoro dopo le 13:00 è straordinario pagato alla tariffa normale, senza pausa.</div>
+      <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Il sabato 08:00–13:00 e il sabato di ferie valgono una giornata intera. Dopo le 17:00 nei feriali e dopo le 13:00 il sabato, ogni scaglione completo di 30 minuti è straordinario. La domenica tutte le ore lavorate sono straordinario, pagate alla tariffa normale e comprese anche nelle ore effettive.</div>
     </section>
 
   </div>
@@ -556,7 +561,7 @@
 
     <div class="modal-subhead">Aggiornamenti</div>
     <div class="update-card">
-      <p id="updateStateText">Versione installata: <span class="update-version">1.4.7</span></p>
+      <p id="updateStateText">Versione installata: <span class="update-version">1.4.8</span></p>
       <button class="btn-ghost" id="btnCheckUpdates">Controlla aggiornamenti</button>
     </div>
 
@@ -601,7 +606,7 @@
   var GIORNI_BREVI = ["L","M","M","G","V","S","D"]; // header, Monday-first
   var LS_ENTRIES = "registroOrari.entries";
   var LS_CONFIG = "registroOrari.config";
-  var APP_VERSION = "1.4.7";
+  var APP_VERSION = "1.4.8";
   var nativeInvoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke
     ? window.__TAURI__.core.invoke
     : null;
@@ -617,6 +622,10 @@
   function isSaturdayKey(key){
     var p = key.split("-");
     return new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10)).getDay() === 6;
+  }
+  function isSundayKey(key){
+    var p = key.split("-");
+    return new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10)).getDay() === 0;
   }
 
   function isValidClock(t){
@@ -818,7 +827,7 @@
   // ogni :00 e :30 conta invece come mezz'ora già completata (es. 16:30 = -30 min).
   // Lo straordinario, invece, viene pagato solo per scaglioni completati: 17:01–17:29
   // non aggiunge nulla, 17:30–17:59 aggiunge 30 minuti, dalle 18:00 ne aggiunge 60.
-  function computePagaGiorno(entrata, uscita, cfg, isSaturday){
+  function computePagaGiorno(entrata, uscita, cfg, isSaturday, isSunday){
     var min = computeWorkedMinutes(entrata, uscita, cfg, isSaturday);
     if(min === null) return { worked:false, paga:0, penalizzato:false, penaleValore:0, penaleMinuti:0, paidMinutes:0 };
     var standardMin = standardMinutesOf(cfg);
@@ -826,9 +835,31 @@
     var soglia = timeToMinutes(cfg.ingressoPrevisto) + cfg.tolleranzaMin;
     var arrivo = timeToMinutes(entrata);
     var scaglione = Math.max(1, Number(cfg.penaleMin) || 30);
-    var ritardoMinuti = arrivo > soglia ? (Math.floor((arrivo - soglia) / scaglione) + 1) * scaglione : 0;
     var fine = timeToMinutes(uscita);
     var finePrevista = timeToMinutes(isSaturday ? cfg.fineMattina : cfg.uscitaPrevista);
+    // La domenica e i turni iniziati direttamente oltre il normale orario di fine
+    // sono lavoro solo straordinario: si pagano esclusivamente gli scaglioni completi.
+    var soloStraordinario = Boolean(isSunday) || arrivo >= finePrevista;
+    if(soloStraordinario){
+      var straordinarioSolo = Math.floor(min / scaglione) * scaglione;
+      return {
+        worked:true,
+        paga:straordinarioSolo * tariffaMin,
+        penalizzato:false,
+        penaleValore:0,
+        penaleMinuti:0,
+        ritardoMinuti:0,
+        uscitaAnticipataMinuti:0,
+        paidMinutes:straordinarioSolo,
+        actualMinutes:min,
+        sabato:Boolean(isSaturday),
+        domenica:Boolean(isSunday),
+        soloStraordinario:true,
+        straordinarioMinuti:straordinarioSolo,
+        straordinarioValore:straordinarioSolo * tariffaMin
+      };
+    }
+    var ritardoMinuti = arrivo > soglia ? (Math.floor((arrivo - soglia) / scaglione) + 1) * scaglione : 0;
     var anticipoReale = Math.max(0, finePrevista - fine);
     if(!isSaturday && anticipoReale > 0){
       anticipoReale = Math.max(0, anticipoReale - breakOverlapMinutes(fine, finePrevista, cfg));
@@ -852,6 +883,8 @@
       paidMinutes:paidMinutes,
       actualMinutes:min,
       sabato:Boolean(isSaturday),
+      domenica:Boolean(isSunday),
+      soloStraordinario:false,
       straordinarioMinuti:straordinarioMinuti,
       straordinarioValore:straordinarioMinuti * tariffaMin
     };
@@ -967,6 +1000,7 @@
     statGiorni: document.getElementById("statGiorni"),
     statGiorniSub: document.getElementById("statGiorniSub"),
     statOre: document.getElementById("statOre"),
+    statStraordinario: document.getElementById("statStraordinario"),
     statFerieAnno: document.getElementById("statFerieAnno"),
     statFerieAnnoSub: document.getElementById("statFerieAnnoSub"),
     statPaga: document.getElementById("statPaga"),
@@ -1098,14 +1132,16 @@
       }
       return;
     }
-    var p = computePagaGiorno(el.inEntrata.value, el.inUscita.value, state.config, isSaturdayKey(state.selectedKey));
+    var p = computePagaGiorno(el.inEntrata.value, el.inUscita.value, state.config, isSaturdayKey(state.selectedKey), isSundayKey(state.selectedKey));
     el.paidPreview.textContent = minutesToLabel(p.paidMinutes);
     el.pagaPreview.textContent = saldo(p.paga);
     var dettagliPenalita = [];
     if(p.ritardoMinuti > 0) dettagliPenalita.push("ritardo −" + minutesToLabel(p.ritardoMinuti));
     if(p.uscitaAnticipataMinuti > 0) dettagliPenalita.push("uscita anticipata −" + minutesToLabel(p.uscitaAnticipataMinuti));
     if(p.straordinarioMinuti > 0){
-      el.penaltyNote.textContent = (p.sabato ? "Sabato: " : "") + minutesToLabel(p.straordinarioMinuti) + " di straordinario (+" + saldo(p.straordinarioValore) + ")." + (dettagliPenalita.length ? " Decurtazioni: " + dettagliPenalita.join("; ") + "." : "");
+      el.penaltyNote.textContent = (p.domenica ? "Domenica: " : p.sabato ? "Sabato: " : "") + minutesToLabel(p.straordinarioMinuti) + " di straordinario (+" + saldo(p.straordinarioValore) + ")." + (dettagliPenalita.length ? " Decurtazioni: " + dettagliPenalita.join("; ") + "." : "");
+    } else if(p.soloStraordinario){
+      el.penaltyNote.textContent = (p.domenica ? "Domenica: " : p.sabato ? "Sabato: " : "") + "nessuno scaglione completo di " + (Number(state.config.penaleMin) || 30) + " minuti; lo straordinario retribuito è 0h 00m.";
     } else if(p.sabato && !p.penalizzato){
       el.penaltyNote.textContent = "Sabato: 08:00–13:00 riconosciuto come giornata intera da " + saldo(state.config.paga) + ".";
     } else if(dettagliPenalita.length){
@@ -1195,7 +1231,7 @@
   // ---- Summary ----
   function monthStats(year, month){
     var total = daysInMonth(year, month);
-    var giorni = 0, ferie = 0, assenze = 0, oreMin = 0, orePagateMin = 0, penalitaMin = 0, paga = 0;
+    var giorni = 0, ferie = 0, assenze = 0, oreMin = 0, orePagateMin = 0, penalitaMin = 0, straordinarioMin = 0, paga = 0;
     for(var d=1; d<=total; d++){
       var key = keyFor(year, month, d);
       var entry = state.entries[key];
@@ -1211,18 +1247,20 @@
           assenze++;
           continue;
         }
-        var min = computeWorkedMinutes(entry.entrata, entry.uscita, state.config, new Date(year, month, d).getDay() === 6);
+        var dow = new Date(year, month, d).getDay();
+        var min = computeWorkedMinutes(entry.entrata, entry.uscita, state.config, dow === 6);
         if(min !== null){
-          var calcolo = computePagaGiorno(entry.entrata, entry.uscita, state.config, new Date(year, month, d).getDay() === 6);
+          var calcolo = computePagaGiorno(entry.entrata, entry.uscita, state.config, dow === 6, dow === 0);
           giorni++;
           oreMin += min;
           orePagateMin += calcolo.paidMinutes;
           penalitaMin += calcolo.penaleMinuti;
+          straordinarioMin += calcolo.straordinarioMinuti || 0;
           paga += calcolo.paga;
         }
       }
     }
-    return { giorni: giorni, ferie:ferie, assenze:assenze, oreMin: oreMin, orePagateMin:orePagateMin, penalitaMin:penalitaMin, paga: paga };
+    return { giorni: giorni, ferie:ferie, assenze:assenze, oreMin: oreMin, orePagateMin:orePagateMin, penalitaMin:penalitaMin, straordinarioMin:straordinarioMin, paga: paga };
   }
 
   function annualVacationCount(year){
@@ -1238,6 +1276,7 @@
     el.statGiorni.textContent = s.giorni;
     el.statGiorniSub.textContent = s.ferie + (s.ferie === 1 ? " ferie" : " ferie") + " · " + s.assenze + (s.assenze === 1 ? " assenza" : " assenze");
     el.statOre.textContent = minutesToLabel(s.oreMin);
+    el.statStraordinario.textContent = minutesToLabel(s.straordinarioMin);
     el.statFerieAnno.textContent = annualVacationCount(state.viewYear);
     el.statFerieAnnoSub.textContent = "anno " + state.viewYear;
     el.statPaga.textContent = saldo(s.paga);
@@ -1258,9 +1297,9 @@
       var hasWorkData = Boolean(entry && (entry.entrata || entry.uscita));
       var min = entry && tipo === "lavoro" ? computeWorkedMinutes(entry.entrata, entry.uscita, state.config, dow === 6) : null;
       var worked = min !== null;
-      var giornoPaga = worked ? computePagaGiorno(entry.entrata, entry.uscita, state.config, dow === 6) : null;
-      if(isFerie) giornoPaga = { paidMinutes:standardMinutesOf(state.config), penaleMinuti:0, penalizzato:false, paga:state.config.paga };
-      if(isAssenza) giornoPaga = { paidMinutes:0, penaleMinuti:0, penalizzato:false, paga:0 };
+      var giornoPaga = worked ? computePagaGiorno(entry.entrata, entry.uscita, state.config, dow === 6, dow === 0) : null;
+      if(isFerie) giornoPaga = { paidMinutes:standardMinutesOf(state.config), penaleMinuti:0, penalizzato:false, straordinarioMinuti:0, paga:state.config.paga };
+      if(isAssenza) giornoPaga = { paidMinutes:0, penaleMinuti:0, penalizzato:false, straordinarioMinuti:0, paga:0 };
 
       var tr = document.createElement("tr");
       var classes = [];
@@ -1443,7 +1482,7 @@
   // ---- CSV export ----
   el.btnExportCsv.addEventListener("click", function(){
     var total = daysInMonth(state.viewYear, state.viewMonth);
-    var rows = ["Data;Giorno;Stato;Entrata;Uscita;Ore effettive;Ore retribuite;Decurtazioni orarie;Paga (EUR);Note"];
+    var rows = ["Data;Giorno;Stato;Entrata;Uscita;Ore effettive;Ore retribuite;Ore straordinarie;Decurtazioni orarie;Paga (EUR);Note"];
     for(var d=1; d<=total; d++){
       var key = keyFor(state.viewYear, state.viewMonth, d);
       var dow = new Date(state.viewYear, state.viewMonth, d).getDay();
@@ -1453,9 +1492,9 @@
       var hasWorkData = Boolean(entry && (entry.entrata || entry.uscita));
       var min = entry && tipo === "lavoro" ? computeWorkedMinutes(entry.entrata, entry.uscita, state.config, dow === 6) : null;
       var worked = min !== null;
-      var giornoPaga = worked ? computePagaGiorno(entry.entrata, entry.uscita, state.config, dow === 6) : null;
-      if(isFerie) giornoPaga = { paidMinutes:standardMinutesOf(state.config), penaleMinuti:0, penalizzato:false, paga:state.config.paga };
-      if(isAssenza) giornoPaga = { paidMinutes:0, penaleMinuti:0, penalizzato:false, paga:0 };
+      var giornoPaga = worked ? computePagaGiorno(entry.entrata, entry.uscita, state.config, dow === 6, dow === 0) : null;
+      if(isFerie) giornoPaga = { paidMinutes:standardMinutesOf(state.config), penaleMinuti:0, penalizzato:false, straordinarioMinuti:0, paga:state.config.paga };
+      if(isAssenza) giornoPaga = { paidMinutes:0, penaleMinuti:0, penalizzato:false, straordinarioMinuti:0, paga:0 };
       rows.push([
         pad(d) + "/" + pad(state.viewMonth+1) + "/" + state.viewYear,
         cap(GIORNI[dow]),
@@ -1464,6 +1503,7 @@
         tipo === "lavoro" && entry.uscita ? entry.uscita : "-",
         worked ? minutesToLabel(min) : (isFerie || isAssenza ? "0h 00m" : "-"),
         giornoPaga ? minutesToLabel(giornoPaga.paidMinutes) : "-",
+        giornoPaga ? minutesToLabel(giornoPaga.straordinarioMinuti || 0) : "-",
         worked && giornoPaga.penalizzato ? minutesToLabel(giornoPaga.penaleMinuti) : "0h 00m",
         giornoPaga ? giornoPaga.paga.toFixed(2).replace(".", ",") : "0,00",
         csvEscape(entry && entry.nota ? entry.nota : "")
@@ -1513,6 +1553,7 @@
         [
           ["Giorni lavorati", String(stats.giorni), stats.ferie + " ferie · " + stats.assenze + " assenze", false],
           ["Ore effettive", minutesToLabel(stats.oreMin), "", false],
+          ["Ore straordinarie", minutesToLabel(stats.straordinarioMin), "scaglioni del mese", false],
           ["Ferie nell’anno", String(annualVacationCount(state.viewYear)), "anno " + state.viewYear, false],
           ["Paga stimata", saldo(stats.paga), "prima della busta paga", true],
           ["Decurtazioni orarie", minutesToLabel(stats.penalitaMin), "totale decurtato", false]
@@ -1557,7 +1598,7 @@
       if(pageIndex === ranges.length - 1){
         var rules = document.createElement("div");
         rules.className = "print-rules";
-        rules.textContent = "Entrata: le 08:30 sono comprese nella tolleranza; dalle 08:31 scatta −30 min, alle 09:00 −60 min e così via. Uscita: 16:30–16:59 −30 min; 16:00–16:29 −60 min; 15:30–15:59 −90 min. Il sabato 08:00–13:00 e il sabato di ferie valgono una giornata intera; il lavoro dopo le 13:00 è straordinario alla tariffa normale, senza pausa.";
+        rules.textContent = "Entrata: le 08:30 sono comprese nella tolleranza; dalle 08:31 scatta −30 min, alle 09:00 −60 min e così via. Uscita: 16:30–16:59 −30 min; 16:00–16:29 −60 min; 15:30–15:59 −90 min. Straordinario: scaglioni completi di 30 minuti dopo le 17:00 nei feriali, dopo le 13:00 il sabato e per tutte le ore lavorate la domenica; è pagato alla tariffa normale e resta incluso nelle ore effettive.";
         sheet.appendChild(rules);
       }
       el.printReport.appendChild(sheet);
