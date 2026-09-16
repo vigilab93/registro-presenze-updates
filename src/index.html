@@ -549,19 +549,19 @@
     <div class="modal-subhead">Tolleranza ingresso</div>
     <div class="field-row">
       <div class="field">
-        <label for="cfgTolleranza">Tolleranza (minuti dopo l'ingresso previsto)</label>
-        <input type="number" id="cfgTolleranza" min="0" step="5">
+        <label for="cfgSogliaRitardo">Fine tolleranza ritardo</label>
+        <input type="time" id="cfgSogliaRitardo">
       </div>
       <div class="field">
         <label for="cfgPenale">Durata di ogni scaglione (minuti)</label>
         <input type="number" id="cfgPenale" min="0" step="5">
       </div>
     </div>
-    <div style="font-size:11.5px;color:var(--ink-soft);line-height:1.5;">Ogni nuovo scaglione sottrae altri 30 minuti di paga: 08:31–08:59 = −30 min, 09:00–09:29 = −60 min, 09:30–09:59 = −90 min.</div>
+    <div style="font-size:11.5px;color:var(--ink-soft);line-height:1.5;">La fine della tolleranza è indipendente dall’orario previsto: arrivare prima non aumenta la paga. Ogni nuovo scaglione sottrae altri 30 minuti: 08:31–08:59 = −30 min, 09:00–09:29 = −60 min, 09:30–09:59 = −90 min.</div>
 
     <div class="modal-subhead">Aggiornamenti</div>
     <div class="update-card">
-      <p id="updateStateText">Versione installata: <span class="update-version">1.4.8</span></p>
+      <p id="updateStateText">Versione installata: <span class="update-version">1.4.9</span></p>
       <button class="btn-ghost" id="btnCheckUpdates">Controlla aggiornamenti</button>
     </div>
 
@@ -606,7 +606,7 @@
   var GIORNI_BREVI = ["L","M","M","G","V","S","D"]; // header, Monday-first
   var LS_ENTRIES = "registroOrari.entries";
   var LS_CONFIG = "registroOrari.config";
-  var APP_VERSION = "1.4.8";
+  var APP_VERSION = "1.4.9";
   var nativeInvoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke
     ? window.__TAURI__.core.invoke
     : null;
@@ -806,7 +806,7 @@
     entries: {},
     config: {
       nomeApp: "Registro Presenze", pausa: 30, paga: 50,
-      ingressoPrevisto: "08:15", tolleranzaMin: 15, penaleMin: 30,
+      ingressoPrevisto: "08:15", sogliaRitardo: "08:30", tolleranzaMin: 15, penaleMin: 30,
       fineMattina: "13:00", inizioPomeriggio: "13:30", uscitaPrevista: "17:00"
     },
     viewYear: todayObj().y,
@@ -822,7 +822,8 @@
     return tot > 0 ? tot : 495;
   }
 
-  // Calcolo retribuzione: entro la tolleranza l'inizio pagato resta 08:15.
+  // Calcolo retribuzione: la soglia del ritardo è indipendente dall'orario previsto.
+  // Un ingresso anticipato non aumenta la paga e fino alle 08:30 non applica penalità.
   // Il ritardo scatta all'inizio di ogni nuovo scaglione; per l'uscita anticipata
   // ogni :00 e :30 conta invece come mezz'ora già completata (es. 16:30 = -30 min).
   // Lo straordinario, invece, viene pagato solo per scaglioni completati: 17:01–17:29
@@ -832,7 +833,7 @@
     if(min === null) return { worked:false, paga:0, penalizzato:false, penaleValore:0, penaleMinuti:0, paidMinutes:0 };
     var standardMin = standardMinutesOf(cfg);
     var tariffaMin = standardMin > 0 ? cfg.paga / standardMin : 0;
-    var soglia = timeToMinutes(cfg.ingressoPrevisto) + cfg.tolleranzaMin;
+    var soglia = timeToMinutes(cfg.sogliaRitardo || "08:30");
     var arrivo = timeToMinutes(entrata);
     var scaglione = Math.max(1, Number(cfg.penaleMin) || 30);
     var fine = timeToMinutes(uscita);
@@ -1021,7 +1022,7 @@
     cfgFineMattina: document.getElementById("cfgFineMattina"),
     cfgInizioPomeriggio: document.getElementById("cfgInizioPomeriggio"),
     cfgUscitaPrevista: document.getElementById("cfgUscitaPrevista"),
-    cfgTolleranza: document.getElementById("cfgTolleranza"),
+    cfgSogliaRitardo: document.getElementById("cfgSogliaRitardo"),
     cfgPenale: document.getElementById("cfgPenale"),
     btnExportBackup: document.getElementById("btnExportBackup"),
     btnImportBackup: document.getElementById("btnImportBackup"),
@@ -1147,7 +1148,7 @@
     } else if(dettagliPenalita.length){
       el.penaltyNote.textContent = "Decurtazioni: " + dettagliPenalita.join("; ") + ". Totale −" + minutesToLabel(p.penaleMinuti) + " (−" + saldo(p.penaleValore) + ").";
     } else {
-      el.penaltyNote.textContent = "Nessuna penalità: entrata entro la tolleranza delle " + minutesToClock(timeToMinutes(state.config.ingressoPrevisto) + state.config.tolleranzaMin) + " e uscita completa.";
+      el.penaltyNote.textContent = "Nessuna penalità: entrata entro la tolleranza delle " + (state.config.sogliaRitardo || "08:30") + " e uscita completa.";
     }
   }
   function updateDayTypeUI(){
@@ -1714,7 +1715,7 @@
     el.cfgFineMattina.value = state.config.fineMattina;
     el.cfgInizioPomeriggio.value = state.config.inizioPomeriggio;
     el.cfgUscitaPrevista.value = state.config.uscitaPrevista;
-    el.cfgTolleranza.value = state.config.tolleranzaMin;
+    el.cfgSogliaRitardo.value = state.config.sogliaRitardo || "08:30";
     el.cfgPenale.value = state.config.penaleMin;
     el.settingsOverlay.classList.remove("hidden");
   }
@@ -1738,9 +1739,8 @@
     if(el.cfgFineMattina.value) state.config.fineMattina = el.cfgFineMattina.value;
     if(el.cfgInizioPomeriggio.value) state.config.inizioPomeriggio = el.cfgInizioPomeriggio.value;
     if(el.cfgUscitaPrevista.value) state.config.uscitaPrevista = el.cfgUscitaPrevista.value;
-    var tolleranza = parseInt(el.cfgTolleranza.value, 10);
     var penale = parseInt(el.cfgPenale.value, 10);
-    state.config.tolleranzaMin = isNaN(tolleranza) ? state.config.tolleranzaMin : Math.max(0,tolleranza);
+    if(el.cfgSogliaRitardo.value) state.config.sogliaRitardo = el.cfgSogliaRitardo.value;
     state.config.penaleMin = isNaN(penale) ? state.config.penaleMin : Math.max(0,penale);
 
     saveConfig();

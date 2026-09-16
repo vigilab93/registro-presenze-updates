@@ -27,6 +27,8 @@ La versione 1.4.7 corregge il manifesto Windows aggiungendo i target `windows` e
 
 La versione 1.4.8 aggiunge il contatore mensile delle **ore straordinarie** nel riepilogo dell’app e nel report. Comprende gli scaglioni completi dopo le 17:00 nei feriali, dopo le 13:00 del sabato e tutte le ore lavorate la domenica. Queste ore restano incluse anche nelle ore effettive e sono pagate alla normale tariffa oraria; il dettaglio giornaliero è incluso nel CSV.
 
+La versione 1.4.9 separa la **fine della tolleranza ritardo** dall’orario di ingresso previsto. La soglia predefinita resta fissata alle 08:30 anche se viene modificato l’orario previsto: gli ingressi anticipati non aumentano la paga, fino alle 08:30 non ci sono decurtazioni e dalle 08:31 continuano gli scaglioni di 30 minuti già concordati.
+
 ## Fase A — preparare il Mac di Vigi
 
 Questa preparazione si esegue una sola volta sul Mac usato per creare la versione Mac.
