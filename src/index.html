@@ -561,7 +561,7 @@
 
     <div class="modal-subhead">Aggiornamenti</div>
     <div class="update-card">
-      <p id="updateStateText">Versione installata: <span class="update-version">1.4.9</span></p>
+      <p id="updateStateText">Versione installata: <span class="update-version">1.4.10</span></p>
       <button class="btn-ghost" id="btnCheckUpdates">Controlla aggiornamenti</button>
     </div>
 
@@ -606,7 +606,7 @@
   var GIORNI_BREVI = ["L","M","M","G","V","S","D"]; // header, Monday-first
   var LS_ENTRIES = "registroOrari.entries";
   var LS_CONFIG = "registroOrari.config";
-  var APP_VERSION = "1.4.9";
+  var APP_VERSION = "1.4.10";
   var nativeInvoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke
     ? window.__TAURI__.core.invoke
     : null;
@@ -815,11 +815,10 @@
     saldiVisibili: false
   };
 
-  function standardMinutesOf(cfg){
-    var mattina = timeToMinutes(cfg.fineMattina) - timeToMinutes(cfg.ingressoPrevisto);
-    var pomeriggio = timeToMinutes(cfg.uscitaPrevista) - timeToMinutes(cfg.inizioPomeriggio);
-    var tot = (mattina > 0 ? mattina : 0) + (pomeriggio > 0 ? pomeriggio : 0);
-    return tot > 0 ? tot : 495;
+  function standardMinutesOf(){
+    // La presenza prevista resta 08:15–13:00 e 13:30–17:00, ma per contratto
+    // la giornata retribuita e la tariffa oraria si calcolano sempre su 8 ore.
+    return 8 * 60;
   }
 
   // Calcolo retribuzione: la soglia del ritardo è indipendente dall'orario previsto.

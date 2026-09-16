@@ -49,9 +49,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           retryAttempts: 3
-          tagName: registro-presenze-v1.4.9
-          releaseName: Registro Presenze v1.4.9
-          releaseBody: "Separata la soglia del ritardo dall’orario di ingresso previsto. La fine della tolleranza è ora configurata direttamente alle 08:30: gli ingressi anticipati non modificano la paga, fino alle 08:30 non viene applicata alcuna decurtazione e dalle 08:31 continuano gli scaglioni di 30 minuti. I dati e i backup personali restano invariati."
+          tagName: registro-presenze-v1.4.10
+          releaseName: Registro Presenze v1.4.10
+          releaseBody: "Corretta esclusivamente la base retributiva: la giornata piena e la tariffa oraria sono ora calcolate su 8 ore esatte, mantenendo invariati orari di presenza e tutte le altre regole. La tolleranza resta fino alle 08:30 comprese; dalle 08:31 scatta la decurtazione di 30 minuti. I dati e i backup personali restano invariati."
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
@@ -64,8 +64,8 @@ jobs:
       contents: write
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      RELEASE_TAG: registro-presenze-v1.4.9
-      RELEASE_VERSION: 1.4.9
+      RELEASE_TAG: registro-presenze-v1.4.10
+      RELEASE_VERSION: 1.4.10
     steps:
       - name: Crea latest.json con i collegamenti diretti
         shell: bash
