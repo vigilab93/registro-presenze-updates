@@ -561,7 +561,7 @@
 
     <div class="modal-subhead">Aggiornamenti</div>
     <div class="update-card">
-      <p id="updateStateText">Versione installata: <span class="update-version">1.4.10</span></p>
+      <p id="updateStateText">Versione installata: <span class="update-version">1.4.11</span></p>
       <button class="btn-ghost" id="btnCheckUpdates">Controlla aggiornamenti</button>
     </div>
 
@@ -606,7 +606,7 @@
   var GIORNI_BREVI = ["L","M","M","G","V","S","D"]; // header, Monday-first
   var LS_ENTRIES = "registroOrari.entries";
   var LS_CONFIG = "registroOrari.config";
-  var APP_VERSION = "1.4.10";
+  var APP_VERSION = "1.4.11";
   var nativeInvoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke
     ? window.__TAURI__.core.invoke
     : null;
@@ -823,8 +823,9 @@
 
   // Calcolo retribuzione: la soglia del ritardo è indipendente dall'orario previsto.
   // Un ingresso anticipato non aumenta la paga e fino alle 08:30 non applica penalità.
-  // Il ritardo scatta all'inizio di ogni nuovo scaglione; per l'uscita anticipata
-  // ogni :00 e :30 conta invece come mezz'ora già completata (es. 16:30 = -30 min).
+  // Il ritardo scatta all'inizio di ogni nuovo scaglione. Nei giorni feriali le
+  // ore normali retribuite derivano dal tempo realmente lavorato al netto della
+  // sola pausa attraversata, fino a un massimo di 8 ore.
   // Lo straordinario, invece, viene pagato solo per scaglioni completati: 17:01–17:29
   // non aggiunge nulla, 17:30–17:59 aggiunge 30 minuti, dalle 18:00 ne aggiunge 60.
   function computePagaGiorno(entrata, uscita, cfg, isSaturday, isSunday){
@@ -860,17 +861,34 @@
       };
     }
     var ritardoMinuti = arrivo > soglia ? (Math.floor((arrivo - soglia) / scaglione) + 1) * scaglione : 0;
-    var anticipoReale = Math.max(0, finePrevista - fine);
-    if(!isSaturday && anticipoReale > 0){
-      anticipoReale = Math.max(0, anticipoReale - breakOverlapMinutes(fine, finePrevista, cfg));
-    }
-    var uscitaAnticipataMinuti = anticipoReale > 0
-      ? Math.ceil(anticipoReale / scaglione) * scaglione
-      : 0;
     var straordinarioReale = Math.max(0, fine - finePrevista);
     var straordinarioMinuti = Math.floor(straordinarioReale / scaglione) * scaglione;
+    var uscitaAnticipataMinuti;
+    var minutiNormaliRetribuiti;
+
+    if(isSaturday){
+      // Mantiene invariata la regola speciale del sabato: 08:00–13:00 vale
+      // una giornata intera e l'eventuale lavoro successivo è straordinario.
+      var anticipoSabato = Math.max(0, finePrevista - fine);
+      uscitaAnticipataMinuti = anticipoSabato > 0
+        ? Math.ceil(anticipoSabato / scaglione) * scaglione
+        : 0;
+      minutiNormaliRetribuiti = Math.max(0, standardMin - ritardoMinuti - uscitaAnticipataMinuti);
+    } else {
+      // "min" contiene già uscita - entrata meno la sola parte di pausa
+      // realmente attraversata. Togliamo l'eventuale tempo oltre le 17:00,
+      // che continua a essere gestito separatamente come straordinario.
+      var minutiNormaliReali = Math.max(0, min - straordinarioReale);
+      var ritardoRealeOltreSoglia = Math.max(0, arrivo - soglia);
+      var arrotondamentoRitardo = Math.max(0, ritardoMinuti - ritardoRealeOltreSoglia);
+      minutiNormaliRetribuiti = Math.max(0, Math.min(standardMin, minutiNormaliReali) - arrotondamentoRitardo);
+      // È solo la differenza residua rispetto alle 8 ore: non viene sottratta
+      // una seconda volta dal tempo realmente lavorato.
+      uscitaAnticipataMinuti = Math.max(0, standardMin - minutiNormaliRetribuiti - ritardoMinuti);
+    }
+
     var penaleMinuti = ritardoMinuti + uscitaAnticipataMinuti;
-    var paidMinutes = Math.max(0, standardMin - penaleMinuti + straordinarioMinuti);
+    var paidMinutes = minutiNormaliRetribuiti + straordinarioMinuti;
     var paga = paidMinutes * tariffaMin;
     return {
       worked:true,

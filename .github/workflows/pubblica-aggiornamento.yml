@@ -49,9 +49,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           retryAttempts: 3
-          tagName: registro-presenze-v1.4.10
-          releaseName: Registro Presenze v1.4.10
-          releaseBody: "Corretta esclusivamente la base retributiva: la giornata piena e la tariffa oraria sono ora calcolate su 8 ore esatte, mantenendo invariati orari di presenza e tutte le altre regole. La tolleranza resta fino alle 08:30 comprese; dalle 08:31 scatta la decurtazione di 30 minuti. I dati e i backup personali restano invariati."
+          tagName: registro-presenze-v1.4.11
+          releaseName: Registro Presenze v1.4.11
+          releaseBody: "Corretto esclusivamente il calcolo delle ore retribuite nelle giornate parziali: ora deriva dal tempo realmente lavorato, sottraendo soltanto la parte di pausa 13:00–13:30 effettivamente attraversata e senza una seconda penalizzazione per l’uscita anticipata. Restano invariati la giornata standard di 8 ore, la tolleranza fino alle 08:30, gli scaglioni di ritardo, gli straordinari e tutte le altre funzioni."
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
@@ -64,8 +64,8 @@ jobs:
       contents: write
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      RELEASE_TAG: registro-presenze-v1.4.10
-      RELEASE_VERSION: 1.4.10
+      RELEASE_TAG: registro-presenze-v1.4.11
+      RELEASE_VERSION: 1.4.11
     steps:
       - name: Crea latest.json con i collegamenti diretti
         shell: bash
